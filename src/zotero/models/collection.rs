@@ -14,9 +14,7 @@ pub struct Collection {
 }
 
 impl ZoteroClient {
-    pub async fn fetch_collections(
-        &self,
-    ) -> Result<Vec<Collection>, Error> {
+    pub async fn fetch_collections(&self) -> Result<Vec<Collection>, Error> {
         let url = format!("{}/collections", self.base_url);
 
         let res = self

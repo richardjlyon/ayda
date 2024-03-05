@@ -5,17 +5,15 @@ use zotero_llm::zotero::client::ZoteroClient;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    let api_key = env::var("ZOTERO_API_KEY").expect("API key not found");
-    let user_id = env::var("ZOTERO_USER_ID").expect("User ID not found");
-
-    let z = ZoteroClient::new(&api_key, &user_id);
+    let z = ZoteroClient::new(
+        &env::var("ZOTERO_API_KEY").expect("API key not found"),
+        &env::var("ZOTERO_USER_ID").expect("User ID not found"),
+    );
 
     match z.fetch_collections().await {
-        Ok(collections) => {
-            for collection in collections {
-                println!("{:?}", collection);
-            }
-        }
+        Ok(collections) => collections
+            .iter()
+            .for_each(|collection| println!("{:?}", collection)),
         Err(e) => println!("Error: {}", e),
     }
 }

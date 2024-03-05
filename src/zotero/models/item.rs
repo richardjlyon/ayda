@@ -16,10 +16,7 @@ pub struct Item {
 }
 
 impl ZoteroClient {
-    pub async fn fetch_items_with_pdfs(
-        &self,
-        collection_key: &str,
-    ) -> Result<Vec<Item>, Error> {
+    pub async fn fetch_items_with_pdfs(&self, collection_key: &str) -> Result<Vec<Item>, Error> {
         let url = format!("{}/collections/{}/items", self.base_url, collection_key);
 
         let params = [
@@ -38,13 +35,23 @@ impl ZoteroClient {
             .json::<Vec<Item>>()
             .await?;
 
-        // filter to select content type "application/pdf"
-        let pdfs = res
-            .iter()
-            .filter(|&x| x.data.content_type.as_ref() == Some(&"application/pdf".to_string()))
-            .cloned()
-            .collect::<Vec<_>>();
+        Ok(res.into_iter().filter(|x| x.is_pdf()).collect())
+    }
+}
 
-        Ok(pdfs)
+impl Item {
+    pub fn is_pdf(&self) -> bool {
+        self.data.content_type.as_deref() == Some("application/pdf")
+    }
+
+    pub fn filepath(&self, root: &str) -> Option<String> {
+        self.is_pdf().then(|| {
+            format!(
+                "{}/{}/{}.pdf",
+                root,
+                self.data.key,
+                self.data.filename.as_ref().unwrap()
+            )
+        })
     }
 }
