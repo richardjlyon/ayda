@@ -14,17 +14,15 @@ pub struct Collection {
 }
 
 impl ZoteroClient {
-    pub async fn fetch_collections(&self) -> Result<Vec<Collection>, Error> {
-        let url = format!("{}/collections", self.base_url);
-
-        let res = self
+    pub async fn collections(&self) -> Result<Vec<Collection>, Error> {
+        let collections = self
             .client
-            .get(url)
+            .get(format!("{}/collections", self.base_url))
             .send()
             .await?
             .json::<Vec<Collection>>()
             .await?;
 
-        Ok(res)
+        Ok(collections)
     }
 }

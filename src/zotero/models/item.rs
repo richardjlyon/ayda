@@ -16,9 +16,7 @@ pub struct Item {
 }
 
 impl ZoteroClient {
-    pub async fn fetch_items_with_pdfs(&self, collection_key: &str) -> Result<Vec<Item>, Error> {
-        let url = format!("{}/collections/{}/items", self.base_url, collection_key);
-
+    pub async fn items_with_pdfs(&self, collection_key: &str) -> Result<Vec<Item>, Error> {
         let params = [
             ("itemType", "attachment"),
             ("format", "json"),
@@ -28,7 +26,10 @@ impl ZoteroClient {
 
         let res = self
             .client
-            .get(url)
+            .get(format!(
+                "{}/collections/{}/items",
+                self.base_url, collection_key
+            ))
             .query(&params)
             .send()
             .await?

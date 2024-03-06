@@ -10,15 +10,10 @@ async fn main() {
         &env::var("ZOTERO_USER_ID").expect("User ID not found"),
     );
 
-    match z.fetch_items_with_pdfs("NQF36WE7").await {
-        Ok(items) => items
+    match z.collections().await {
+        Ok(collections) => collections
             .iter()
-            .filter_map(|item| {
-                item.filepath(
-                    &env::var("ZOTERO_LIBRARY_ROOT_PATH").expect("Library root path not found"),
-                )
-            })
-            .for_each(|path| println!("{:?}", path)),
+            .for_each(|collection| println!("{:?}", collection)),
         Err(e) => println!("Error: {}", e),
     }
 }
