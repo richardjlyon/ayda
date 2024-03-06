@@ -1,31 +1,11 @@
 //! AnythingLLM API 'Documents' endpoints
 
 use crate::anythingllm::client::AnythingLLMClient;
+use crate::error::{LLMError, Result};
 use regex::Regex;
 use reqwest::multipart;
 use serde::{Deserialize, Serialize};
 use std::fs;
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Item {
-    name: String,
-    id: Option<String>,
-    #[serde(rename = "type")]
-    item_type: String,
-    items: Option<Vec<Item>>,
-    title: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct LocalFiles {
-    items: Vec<Item>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct DocumentResponse {
-    #[serde(rename = "localFiles")]
-    local_files: LocalFiles,
-}
 
 /// Represents a Document object in the AnythingLLM API
 #[derive(Debug)]
@@ -36,28 +16,8 @@ pub struct Document {
 }
 
 impl AnythingLLMClient {
-    /// Get all documents
-    pub async fn get_documents(&self) -> Result<Vec<Document>, reqwest::Error> {
-        match self.get::<DocumentResponse>("documents").await {
-            Ok(response) => Ok(response.local_files.items[0]
-                .items
-                .as_ref()
-                .unwrap()
-                .iter()
-                .filter_map(|item| {
-                    item.id.clone().map(|id| Document {
-                        id,
-                        name: item.name.clone(),
-                        title: item.title.clone().unwrap_or_else(|| item.name.clone()),
-                    })
-                })
-                .collect()),
-            Err(e) => Err(e),
-        }
-    }
-
-    /// Upload a document
-    pub async fn post_document(&self, file_path: &str) -> Result<(), reqwest::Error> {
+    /// Upload a new document
+    pub async fn new_document(&self, file_path: &str) -> Result<()> {
         // Check the document doesn't already exist
         let documents = self.get_documents().await.unwrap();
         let file_name = name_from_path(file_path);
@@ -81,10 +41,51 @@ impl AnythingLLMClient {
         // Create a Form and add the Part to it
         let form = multipart::Form::new().part("file", pdf_part);
 
-        self.post_multipart("document/upload", form).await.unwrap();
+        let response = self.post_multipart("document/upload", form).await.unwrap();
+        println!("{:#?}", response);
 
         Ok(())
     }
+    /// Get all documents
+    pub async fn get_documents(&self) -> Result<Vec<Document>> {
+        match self.get::<DocumentResponse>("documents").await {
+            Ok(response) => Ok(response.local_files.items[0]
+                .items
+                .as_ref()
+                .unwrap()
+                .iter()
+                .filter_map(|item| {
+                    item.id.clone().map(|id| Document {
+                        id,
+                        name: item.name.clone(),
+                        title: item.title.clone().unwrap_or_else(|| item.name.clone()),
+                    })
+                })
+                .collect()),
+            Err(e) => Err(LLMError::ServiceError(e.to_string())),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct DocumentResponse {
+    #[serde(rename = "localFiles")]
+    local_files: LocalFiles,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct LocalFiles {
+    items: Vec<Item>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Item {
+    name: String,
+    id: Option<String>,
+    #[serde(rename = "type")]
+    item_type: String,
+    items: Option<Vec<Item>>,
+    title: Option<String>,
 }
 
 // Utility functions /////////////////////////////////////////////////////////////////////////////
@@ -116,6 +117,8 @@ pub fn remove_uuid(s: &str) -> String {
     re.replace(s, "").to_string()
 }
 
+// Tests /////////////////////////////////////////////////////////////////////////////
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,20 +143,21 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_upload_document() {
+        let fixture = TestFixture::new();
+        let doc_path = "/Users/richardlyon/Desktop/climate pdfs/Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf";
+        let result = fixture.client.new_document(doc_path).await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn test_get_documents() {
         let fixture = TestFixture::new();
         let result = fixture.client.get_documents().await;
         assert!(result.is_ok());
 
         println!("{:?}", result.unwrap());
-    }
-
-    #[tokio::test]
-    async fn post_document() {
-        let fixture = TestFixture::new();
-        let doc_path = "/Users/richardlyon/Desktop/climate pdfs/Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf";
-        let result = fixture.client.post_document(doc_path).await;
-        assert!(result.is_ok());
     }
 
     #[test]
