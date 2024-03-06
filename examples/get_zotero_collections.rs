@@ -1,6 +1,7 @@
 use dotenv::dotenv;
 use std::env;
 use zotero_llm::zotero::client::ZoteroClient;
+use zotero_llm::zotero::models::collection::Collection;
 
 #[tokio::main]
 async fn main() {
@@ -10,7 +11,7 @@ async fn main() {
         &env::var("ZOTERO_USER_ID").expect("User ID not found"),
     );
 
-    match z.collections().await {
+    match z.get::<Vec<Collection>>("collections").await {
         Ok(collections) => collections
             .iter()
             .for_each(|collection| println!("{:?}", collection)),

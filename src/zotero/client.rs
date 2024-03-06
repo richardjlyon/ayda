@@ -1,4 +1,6 @@
 use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::Error;
+use serde::de::DeserializeOwned;
 
 pub struct ZoteroClient {
     pub client: reqwest::Client,
@@ -20,6 +22,13 @@ impl ZoteroClient {
             client,
             base_url: format!("https://api.zotero.org/users/{}", user_id).to_string(),
         }
+    }
+
+    pub async fn get<T: DeserializeOwned>(&self, endpoint: &str) -> Result<T, Error> {
+        let url = format!("{}/{}", self.base_url, endpoint);
+        let res = self.client.get(&url).send().await?;
+        let data = res.json::<T>().await?;
+        Ok(data)
     }
 }
 
