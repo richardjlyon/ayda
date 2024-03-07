@@ -7,6 +7,7 @@ use regex::Regex;
 use reqwest::multipart;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use crate::anythingllm::models::document::DocumentsResponse;
 
 /// Represents a Document object in the AnythingLLM API
 #[derive(Debug)]
@@ -52,7 +53,7 @@ impl AnythingLLMClient {
     }
     /// Get all documents
     pub async fn document_list(&self) -> Result<Vec<Document>> {
-        match self.get::<DocumentResponse>("documents").await {
+        match self.get::<DocumentsResponse>("documents").await {
             Ok(response) => Ok(response.local_files.items[0]
                 .items
                 .as_ref()
@@ -69,27 +70,6 @@ impl AnythingLLMClient {
             Err(e) => Err(LLMError::ServiceError(e.to_string())),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct DocumentResponse {
-    #[serde(rename = "localFiles")]
-    local_files: LocalFiles,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct LocalFiles {
-    items: Vec<Item>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Item {
-    name: String,
-    id: Option<String>,
-    #[serde(rename = "type")]
-    item_type: String,
-    items: Option<Vec<Item>>,
-    title: Option<String>,
 }
 
 // Utility functions /////////////////////////////////////////////////////////////////////////////

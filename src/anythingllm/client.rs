@@ -2,10 +2,11 @@
 /// It includes the base URL for the API and a `reqwest::Client` for making requests.
 use crate::anythingllm::error::{LLMError, Result};
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::{multipart, Client, StatusCode};
+use reqwest::{Client, multipart, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::json;
+use crate::anythingllm::models::document::DocumentUploadResponse;
 
 pub struct AnythingLLMClient {
     pub base_url: String,
@@ -77,7 +78,7 @@ impl AnythingLLMClient {
         &self,
         endpoint: &str,
         form: multipart::Form,
-    ) -> Result<DocumentResponse> {
+    ) -> Result<DocumentUploadResponse> {
         let response = self
             .client
             .post(&format!("{}/{}", self.base_url, endpoint))
@@ -90,27 +91,15 @@ impl AnythingLLMClient {
             return Err(LLMError::ServiceError(response.status().to_string()));
         }
 
-        let document_response: DocumentResponse = response.json().await?;
+        let document_response: DocumentUploadResponse = response.json().await?;
         Ok(document_response)
     }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct DocumentResponse {
-    pub success: bool,
-    pub error: Option<String>,
-    pub documents: Vec<DocumentDetails>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct DocumentDetails {
-    pub id: String,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::anythingllm::api::workspaces::WorkspaceResponse;
+    use crate::anythingllm::models::workspace::WorkspacesResponse;
     use dotenv::dotenv;
     use std::env;
 
@@ -129,7 +118,7 @@ mod tests {
             "invalid_api_key",
         );
 
-        match client.get::<WorkspaceResponse>("workspaces").await {
+        match client.get::<WorkspacesResponse>("workspaces").await {
             Ok(_) => panic!("Expected an error, but got a successful response"),
             Err(err) => match err {
                 LLMError::AuthFail(_) => (), // Test passes if we get here

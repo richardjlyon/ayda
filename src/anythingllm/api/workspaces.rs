@@ -3,6 +3,7 @@
 use crate::anythingllm::client::AnythingLLMClient;
 use crate::anythingllm::error::Result;
 use serde::{Deserialize, Serialize};
+use crate::anythingllm::models::workspace::{WorkspacesResponseWorkspace, WorkspacesResponse};
 
 impl AnythingLLMClient {
     /// Create a new workspace
@@ -28,8 +29,8 @@ impl AnythingLLMClient {
     }
 
     /// Get all workspaces
-    pub async fn workspace_list(&self) -> Result<Vec<Workspace>> {
-        match self.get::<WorkspaceResponse>("workspaces").await {
+    pub async fn workspace_list(&self) -> Result<Vec<WorkspacesResponseWorkspace>> {
+        match self.get::<WorkspacesResponse>("workspaces").await {
             Ok(response) => Ok(response.workspaces),
             Err(e) => {
                 println!("Error: {:?}", e);
@@ -37,18 +38,6 @@ impl AnythingLLMClient {
             }
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WorkspaceResponse {
-    workspaces: Vec<Workspace>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Workspace {
-    pub id: u8,
-    pub name: String,
-    pub slug: String,
 }
 
 #[cfg(test)]
