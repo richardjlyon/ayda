@@ -8,6 +8,10 @@ pub enum LLMError {
     AuthFail(String),
     #[error("Service error: {0}")]
     ServiceError(String),
+    #[error("Document exists: {0}")]
+    DocumentExistsError(String),
+    #[error("Couldn't add document: {0}")]
+    DocumentAddError(String),
 }
 
 impl From<reqwest::Error> for LLMError {

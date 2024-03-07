@@ -1,7 +1,8 @@
 //! AnythingLLM API 'Documents' endpoints
 
 use crate::anythingllm::client::AnythingLLMClient;
-use crate::error::{LLMError, Result};
+use crate::anythingllm::error::LLMError::DocumentExistsError;
+use crate::anythingllm::error::{LLMError, Result};
 use regex::Regex;
 use reqwest::multipart;
 use serde::{Deserialize, Serialize};
@@ -16,16 +17,15 @@ pub struct Document {
 }
 
 impl AnythingLLMClient {
-    /// Upload a new document
-    pub async fn new_document(&self, file_path: &str) -> Result<()> {
+    /// Add a new document
+    pub async fn document_add(&self, file_path: &str) -> Result<()> {
         // Check the document doesn't already exist
-        let documents = self.get_documents().await.unwrap();
+        let documents = self.document_list().await.unwrap();
         let file_name = name_from_path(file_path);
         for doc in documents {
             let doc_name = remove_uuid(&doc.name);
             if file_name == doc_name {
-                println!("Document already exists");
-                return Ok(());
+                return Err(DocumentExistsError(file_name));
             }
         }
 
@@ -44,10 +44,14 @@ impl AnythingLLMClient {
         let response = self.post_multipart("document/upload", form).await.unwrap();
         println!("{:#?}", response);
 
+        // if !response.success {
+        //     return Err(LLMError::DocumentAddError(response));
+        // }
+
         Ok(())
     }
     /// Get all documents
-    pub async fn get_documents(&self) -> Result<Vec<Document>> {
+    pub async fn document_list(&self) -> Result<Vec<Document>> {
         match self.get::<DocumentResponse>("documents").await {
             Ok(response) => Ok(response.local_files.items[0]
                 .items
@@ -146,7 +150,7 @@ mod tests {
     async fn test_upload_document() {
         let fixture = TestFixture::new();
         let doc_path = "/Users/richardlyon/Desktop/climate pdfs/Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf";
-        let result = fixture.client.new_document(doc_path).await;
+        let result = fixture.client.document_add(doc_path).await;
 
         assert!(result.is_ok());
     }
@@ -154,7 +158,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_documents() {
         let fixture = TestFixture::new();
-        let result = fixture.client.get_documents().await;
+        let result = fixture.client.document_list().await;
         assert!(result.is_ok());
 
         println!("{:?}", result.unwrap());

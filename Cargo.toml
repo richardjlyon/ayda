@@ -1,7 +1,8 @@
 [package]
-name = "zotero-llm"
+name = "zot2llm"
 version = "0.1.0"
 edition = "2021"
+description = "A tool for loading Zotero documents into a Large Language Model."
 
 [dependencies]
 dotenv = "0.15.0"
@@ -11,4 +12,6 @@ tokio = { version = "1.36.0", features = ["full"] }
 serde_json = "1.0.114"
 regex = "1.10.3"
 thiserror = "1.0.57"
+clap = { version = "4.5.2", features = ["derive"] }
 chrono = "0.4.35"
+

@@ -1,3 +1,3 @@
 pub mod anythingllm;
-pub mod error;
+pub mod app;
 pub mod zotero;
