@@ -18,6 +18,27 @@ pub struct Document {
 }
 
 impl AnythingLLMClient {
+    /// List all documents
+    pub async fn document_list(&self) -> Result<Vec<Document>> {
+        let response = self.get::<DocumentsResponse>("documents").await?;
+
+        let mut documents = response.local_files.items[0]
+            .items
+            .as_ref()
+            .unwrap()
+            .iter()
+            .map(|item| Document {
+                id: item.id.clone().unwrap(),
+                name: item.name.clone(),
+                title: item.title.clone().unwrap_or_else(|| item.name.clone()),
+            })
+            .collect::<Vec<Document>>();
+
+        documents.sort_by(|a, b| a.name.cmp(&b.name));
+
+        Ok(documents)
+    }
+
     /// Add a new document
     pub async fn document_add(&self, file_path: &str) -> Result<DocumentUploadResponseDocuments> {
         let path = std::path::Path::new(file_path);
@@ -50,25 +71,6 @@ impl AnythingLLMClient {
         }
 
         Ok(response.documents[0].clone())
-    }
-
-    /// Get all documents
-    pub async fn document_list(&self) -> Result<Vec<Document>> {
-        let response = self.get::<DocumentsResponse>("documents").await?;
-        let documents = response.local_files.items[0]
-            .items
-            .as_ref()
-            .unwrap()
-            .iter()
-            .filter_map(|item| {
-                item.id.clone().map(|id| Document {
-                    id,
-                    name: item.name.clone(),
-                    title: item.title.clone().unwrap_or_else(|| item.name.clone()),
-                })
-            })
-            .collect();
-        Ok(documents)
     }
 }
 

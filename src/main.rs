@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use zot2llm::app::commands::document::document_add;
+use zot2llm::app::commands::document::{document_add, document_list};
 use zot2llm::app::commands::workspace::{workspace_create, workspace_delete};
 use zot2llm::app::commands::*;
 use zot2llm::app::*;
@@ -29,6 +29,11 @@ async fn main() {
         },
 
         Commands::Document { command } => match command {
+            DocumentCommands::List => {
+                if let Err(e) = document_list().await {
+                    eprintln!("Error: {}", e);
+                }
+            }
             DocumentCommands::Add {
                 document_filepath,
                 workspace_id,
@@ -36,10 +41,6 @@ async fn main() {
                 if let Err(e) = document_add(&document_filepath, workspace_id).await {
                     eprintln!("Error: {}", e);
                 }
-            }
-            DocumentCommands::Remove { document_id } => {
-                println!("Removing document: {}", document_id);
-                // Implement the logic to remove a document here.
             }
         },
 

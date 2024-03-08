@@ -50,18 +50,15 @@ pub enum WorkspaceCommands {
 
 #[derive(Subcommand)]
 pub enum DocumentCommands {
-    /// Adds a new document
+    /// Add a new document
     Add {
-        /// Name of the document to add
+        /// File path of the document
         document_filepath: String,
-        /// ID of the workspace to add the document to (list to get the id)
+        /// ID of the workspace (use: 'workspace list')
         workspace_id: u8,
     },
-    /// Removes an existing document
-    Remove {
-        /// ID of the document to remove (list to get the id)
-        document_id: u8,
-    },
+    /// List all documents
+    List,
 }
 
 #[derive(Subcommand)]
