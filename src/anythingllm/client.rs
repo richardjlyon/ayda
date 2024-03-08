@@ -5,7 +5,7 @@ use crate::anythingllm::models::document::DocumentUploadResponse;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{multipart, Client, StatusCode};
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
+
 use serde_json::json;
 
 pub struct AnythingLLMClient {
@@ -45,7 +45,6 @@ impl AnythingLLMClient {
 
     pub async fn delete(&self, endpoint: &str, slug: &str) -> Result<()> {
         let url = format!("{}/{}/{}", self.base_url, endpoint, slug);
-        println!("DEBUG: {}", url);
         let response = self.client.delete(&url).send().await?;
 
         match response.status() {

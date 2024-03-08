@@ -14,7 +14,7 @@ pub enum LLMError {
     DocumentExistsError(String),
     #[error("Couldn't add document: {0}")]
     DocumentAddError(String),
-    #[error("No Workspace with id: {0}")]
+    #[error("No Workspace with id {0}")]
     WorkspaceIdError(u8),
 }
 

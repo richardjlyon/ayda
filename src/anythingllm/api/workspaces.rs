@@ -4,7 +4,7 @@ use crate::anythingllm::client::AnythingLLMClient;
 use crate::anythingllm::error::LLMError::WorkspaceIdError;
 use crate::anythingllm::error::Result;
 use crate::anythingllm::models::workspace::{WorkspacesResponse, WorkspacesResponseWorkspace};
-use serde::{Deserialize, Serialize};
+
 use serde_json::json;
 
 impl AnythingLLMClient {
@@ -15,7 +15,7 @@ impl AnythingLLMClient {
 
     /// Delete a workspace
     pub async fn workspace_delete(&self, slug: &str) -> Result<()> {
-        self.delete("workspace", &slug).await
+        self.delete("workspace", slug).await
     }
 
     /// Get all workspaces

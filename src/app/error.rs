@@ -6,7 +6,7 @@ pub type Result<T> = core::result::Result<T, AppError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum AppError {
-    #[error("No Workspace with id: {0}")]
+    #[error("No Workspace with id {0}")]
     WorkspaceIdError(u8),
     #[error("Document not found: {0}")]
     DocumentNotFoundError(String),

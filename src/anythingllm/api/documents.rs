@@ -6,7 +6,7 @@ use crate::anythingllm::error::{LLMError, Result};
 use crate::anythingllm::models::document::{DocumentUploadResponseDocuments, DocumentsResponse};
 use regex::Regex;
 use reqwest::multipart;
-use serde::{Deserialize, Serialize};
+
 use std::fs;
 
 /// Represents a Document object in the AnythingLLM API
@@ -89,12 +89,11 @@ pub fn filename_from_path(name: &str) -> String {
 
     let multi_space = Regex::new(r" +").unwrap();
     let file_name = multi_space.replace_all(&file_name, " ");
-    let file_name = file_name
-        .replace(" - ", "-")
-        .replace(",", "")
-        .replace(" ", "-");
 
     file_name
+        .replace(" - ", "-")
+        .replace(',', "")
+        .replace(' ', "-")
 }
 
 // FIXME Check whether I need this, and remove it if not

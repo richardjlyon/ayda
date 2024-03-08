@@ -25,12 +25,15 @@ pub enum Commands {
         #[clap(subcommand)]
         command: DocumentCommands,
     },
+    /// Manage Zotero collections
+    Zotero {
+        #[clap(subcommand)]
+        command: ZoteroCommands,
+    },
 }
 
 #[derive(Subcommand)]
 pub enum WorkspaceCommands {
-    /// List all workspaces
-    List,
     /// Create a new workspace
     Create {
         /// Name of the workspace to create
@@ -41,6 +44,8 @@ pub enum WorkspaceCommands {
         /// id of the workspace to delete (use 'list' to get the id)
         workspace_id: u8,
     },
+    /// List all workspaces
+    List,
 }
 
 #[derive(Subcommand)]
@@ -49,12 +54,23 @@ pub enum DocumentCommands {
     Add {
         /// Name of the document to add
         document_filepath: String,
-        /// Workspace to add the document to
+        /// ID of the workspace to add the document to (list to get the id)
         workspace_id: u8,
     },
     /// Removes an existing document
     Remove {
-        /// Name of the document to remove
-        document_name: String,
+        /// ID of the document to remove (list to get the id)
+        document_id: u8,
     },
+}
+
+#[derive(Subcommand)]
+pub enum ZoteroCommands {
+    /// Add a new collection
+    Add {
+        /// ID of the collection to add (list to get the id)
+        collection_id: u8,
+    },
+    /// List all collections
+    List,
 }
