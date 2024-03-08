@@ -1,28 +1,20 @@
+use crate::anythingllm::api::workspaces::UpdateParameter;
 use crate::app::commands;
-use crate::app::error::AppError::{DocumentMissingError, WorkspaceIdError};
 use crate::app::error::Result;
 
+/// Add a document to a workspace
 pub async fn document_add(document_filepath: &str, workspace_id: u8) -> Result<()> {
-    // Check the document exists
-    if !std::path::Path::new(document_filepath).exists() {
-        return Err(DocumentMissingError(document_filepath.to_string()));
-    }
-
     let client = commands::anythingllm_client();
+    let document = client.document_add(&document_filepath).await?;
+    let workspace_slug = client.workspace_slug_from_id(workspace_id).await?;
 
-    // Check the workspace exists
-    let workspace_slug = client
-        .workspace_list()
-        .await?
-        .iter()
-        .find(|ws| ws.id == workspace_id)
-        .ok_or(WorkspaceIdError(workspace_id))?
-        .slug
-        .clone();
-
-    client.document_add(&document_filepath).await?;
-
-    // Add it to the workspace
+    let res = client
+        .workspace_update_embeddings(
+            &workspace_slug,
+            vec![&document.doc_filepath_internal()],
+            UpdateParameter::Adds,
+        )
+        .await?;
 
     Ok(())
 }

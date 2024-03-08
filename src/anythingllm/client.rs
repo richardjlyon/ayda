@@ -1,12 +1,12 @@
 /// The `AnythingLLMClient` struct represents a client for the AnythingLLM API.
 /// It includes the base URL for the API and a `reqwest::Client` for making requests.
 use crate::anythingllm::error::{LLMError, Result};
+use crate::anythingllm::models::document::DocumentUploadResponse;
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::{Client, multipart, StatusCode};
+use reqwest::{multipart, Client, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::json;
-use crate::anythingllm::models::document::DocumentUploadResponse;
 
 pub struct AnythingLLMClient {
     pub base_url: String,
@@ -93,6 +93,20 @@ impl AnythingLLMClient {
 
         let document_response: DocumentUploadResponse = response.json().await?;
         Ok(document_response)
+    }
+
+    pub async fn post_json(&self, endpoint: &str, json_body: serde_json::Value) -> Result<()> {
+        let response = self
+            .client
+            .post(&format!("{}/{}", self.base_url, endpoint))
+            .json(&json_body)
+            .send()
+            .await?;
+
+        match response.status() {
+            StatusCode::OK => Ok(()),
+            e => Err(LLMError::ServiceError(e.to_string())),
+        }
     }
 }
 

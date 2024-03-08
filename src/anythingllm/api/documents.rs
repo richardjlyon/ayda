@@ -1,13 +1,13 @@
 //! AnythingLLM API 'Documents' endpoints
 
 use crate::anythingllm::client::AnythingLLMClient;
-use crate::anythingllm::error::LLMError::DocumentExistsError;
+use crate::anythingllm::error::LLMError::{DocumentExistsError, DocumentNotFoundError};
 use crate::anythingllm::error::{LLMError, Result};
+use crate::anythingllm::models::document::{DocumentUploadResponseDocuments, DocumentsResponse};
 use regex::Regex;
 use reqwest::multipart;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use crate::anythingllm::models::document::DocumentsResponse;
 
 /// Represents a Document object in the AnythingLLM API
 #[derive(Debug)]
@@ -19,65 +19,67 @@ pub struct Document {
 
 impl AnythingLLMClient {
     /// Add a new document
-    pub async fn document_add(&self, file_path: &str) -> Result<()> {
-        // Check the document doesn't already exist
-        let documents = self.document_list().await.unwrap();
-        let file_name = name_from_path(file_path);
-        for doc in documents {
-            let doc_name = remove_uuid(&doc.name);
-            if file_name == doc_name {
-                return Err(DocumentExistsError(file_name));
-            }
+    pub async fn document_add(&self, file_path: &str) -> Result<DocumentUploadResponseDocuments> {
+        let path = std::path::Path::new(file_path);
+        if !path.exists() {
+            return Err(DocumentNotFoundError(file_path.to_string()));
         }
 
-        // Read the PDF file into a Vec<u8>
-        let pdf_bytes = fs::read(file_path).expect("Failed to read file");
+        let file_name = filename_from_path(file_path);
+        if self
+            .document_list()
+            .await?
+            .iter()
+            .any(|doc| remove_uuid(&doc.name) == file_name)
+        {
+            return Err(DocumentExistsError(file_name));
+        }
 
-        // Create a Part from the PDF bytes
+        // TODO replace .expect with proper error handling
+        let pdf_bytes = fs::read(file_path).expect("Failed to read file");
         let pdf_part = multipart::Part::bytes(pdf_bytes)
-            .file_name(name_from_path(file_path))
+            .file_name(file_name.clone())
             .mime_str("application/pdf")
             .expect("Invalid MIME type");
 
-        // Create a Form and add the Part to it
         let form = multipart::Form::new().part("file", pdf_part);
+        let response = self.post_multipart("document/upload", form).await?;
 
-        let response = self.post_multipart("document/upload", form).await.unwrap();
-        println!("{:#?}", response);
+        if !response.success || response.documents.is_empty() {
+            return Err(LLMError::DocumentAddError(file_path.to_string()));
+        }
 
-        // if !response.success {
-        //     return Err(LLMError::DocumentAddError(response));
-        // }
-
-        Ok(())
+        Ok(response.documents[0].clone())
     }
+
     /// Get all documents
     pub async fn document_list(&self) -> Result<Vec<Document>> {
-        match self.get::<DocumentsResponse>("documents").await {
-            Ok(response) => Ok(response.local_files.items[0]
-                .items
-                .as_ref()
-                .unwrap()
-                .iter()
-                .filter_map(|item| {
-                    item.id.clone().map(|id| Document {
-                        id,
-                        name: item.name.clone(),
-                        title: item.title.clone().unwrap_or_else(|| item.name.clone()),
-                    })
+        let response = self.get::<DocumentsResponse>("documents").await?;
+        let documents = response.local_files.items[0]
+            .items
+            .as_ref()
+            .unwrap()
+            .iter()
+            .filter_map(|item| {
+                item.id.clone().map(|id| Document {
+                    id,
+                    name: item.name.clone(),
+                    title: item.title.clone().unwrap_or_else(|| item.name.clone()),
                 })
-                .collect()),
-            Err(e) => Err(LLMError::ServiceError(e.to_string())),
-        }
+            })
+            .collect();
+        Ok(documents)
     }
 }
 
 // Utility functions /////////////////////////////////////////////////////////////////////////////
 
+// FIXME Check whether I need this, and remove it if not
+// FIXME OR move it into DocumentUploadResponseDocuments
 // Wrangle the file name into the internal format used by AnythingLLM
 // e.g. "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf"
 //   -> "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf"
-pub fn name_from_path(name: &str) -> String {
+pub fn filename_from_path(name: &str) -> String {
     let path = std::path::Path::new(name);
     let file_name = path
         .file_name()
@@ -95,6 +97,7 @@ pub fn name_from_path(name: &str) -> String {
     file_name
 }
 
+// FIXME Check whether I need this, and remove it if not
 pub fn remove_uuid(s: &str) -> String {
     let re = Regex::new(r"-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.json$")
         .unwrap();
@@ -146,7 +149,7 @@ mod tests {
 
     #[test]
     fn test_name_from_path() {
-        let result = name_from_path("/Users/richardlyon/Desktop/climate pdfs/Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf");
+        let result = filename_from_path("/Users/richardlyon/Desktop/climate pdfs/Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf");
         assert_eq!(
             result,
             "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf"

@@ -9,9 +9,13 @@ pub enum LLMError {
     #[error("Service error: {0}")]
     ServiceError(String),
     #[error("Document exists: {0}")]
+    DocumentNotFoundError(String),
+    #[error("Document not found: {0}")]
     DocumentExistsError(String),
     #[error("Couldn't add document: {0}")]
     DocumentAddError(String),
+    #[error("No Workspace with id: {0}")]
+    WorkspaceIdError(u8),
 }
 
 impl From<reqwest::Error> for LLMError {

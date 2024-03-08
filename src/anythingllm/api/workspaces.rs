@@ -1,43 +1,62 @@
 //! AnythingLLM API 'Workspaces' endpoints
 
 use crate::anythingllm::client::AnythingLLMClient;
+use crate::anythingllm::error::LLMError::WorkspaceIdError;
 use crate::anythingllm::error::Result;
+use crate::anythingllm::models::workspace::{WorkspacesResponse, WorkspacesResponseWorkspace};
 use serde::{Deserialize, Serialize};
-use crate::anythingllm::models::workspace::{WorkspacesResponseWorkspace, WorkspacesResponse};
+use serde_json::json;
 
 impl AnythingLLMClient {
     /// Create a new workspace
     pub async fn workspace_create(&self, name: &str) -> Result<()> {
-        match self.post("workspace/new", name).await {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                println!("Error: {:?}", e);
-                Err(e)
-            }
-        }
+        self.post("workspace/new", name).await
     }
 
     /// Delete a workspace
     pub async fn workspace_delete(&self, slug: &str) -> Result<()> {
-        match self.delete("workspace", &slug).await {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                println!("Error: {:?}", e);
-                Err(e)
-            }
-        }
+        self.delete("workspace", &slug).await
     }
 
     /// Get all workspaces
     pub async fn workspace_list(&self) -> Result<Vec<WorkspacesResponseWorkspace>> {
-        match self.get::<WorkspacesResponse>("workspaces").await {
-            Ok(response) => Ok(response.workspaces),
-            Err(e) => {
-                println!("Error: {:?}", e);
-                Err(e)
-            }
-        }
+        let response = self.get::<WorkspacesResponse>("workspaces").await?;
+        Ok(response.workspaces)
     }
+
+    /// Add a document to a workspace
+    pub async fn workspace_update_embeddings(
+        &self,
+        workspace_slug: &str,
+        document_slugs: Vec<&str>,
+        update_parameter: UpdateParameter,
+    ) -> Result<()> {
+        let json_body = match update_parameter {
+            UpdateParameter::Adds => json!({ "adds": document_slugs }),
+            UpdateParameter::Deletes => json!({ "deletes": document_slugs }),
+        };
+
+        self.post_json(
+            &format!("workspace/{}/update-embeddings", workspace_slug),
+            json_body,
+        )
+        .await
+    }
+
+    /// Get a workspace slug from its id
+    pub async fn workspace_slug_from_id(&self, id: u8) -> Result<String> {
+        let workspaces = self.workspace_list().await?;
+        let workspace = workspaces
+            .iter()
+            .find(|ws| ws.id == id)
+            .ok_or(WorkspaceIdError(id))?;
+        Ok(workspace.slug.clone())
+    }
+}
+
+pub enum UpdateParameter {
+    Adds,
+    Deletes,
 }
 
 #[cfg(test)]
