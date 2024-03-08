@@ -14,18 +14,6 @@ pub struct DocumentUploadResponseDocuments {
     pub title: String,
 }
 
-impl DocumentUploadResponseDocuments {
-    /// Synthesise the internal name of a document from title and id
-    pub fn name_internal(&self) -> String {
-        format!("{}-{}.json", self.title, self.id)
-    }
-
-    /// Synthesise the internal filepath of a document
-    pub fn doc_filepath_internal(&self) -> String {
-        format!("custom-documents/{}", self.name_internal())
-    }
-}
-
 // v1/documents
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -41,11 +29,11 @@ pub struct DocumentsResponseLocalFiles {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DocumentsResponseItem {
+    pub items: Option<Vec<DocumentsResponseItem>>,
     pub name: String,
     pub id: Option<String>,
     #[serde(rename = "type")]
     pub item_type: String,
-    pub items: Option<Vec<DocumentsResponseItem>>,
     pub title: Option<String>,
 }
 
@@ -63,5 +51,25 @@ mod tests {
         let expected_doc_filepath_internal = format!("custom-documents/{}", expected_name_internal);
         assert_eq!(doc.name_internal(), expected_name_internal);
         assert_eq!(doc.doc_filepath_internal(), expected_doc_filepath_internal);
+    }
+}
+
+/// Represents a Document object in the AnythingLLM API
+#[derive(Debug)]
+pub struct Document {
+    pub id: String,
+    pub name: String,
+    pub title: String,
+}
+
+impl Document {
+    /// Synthesise the internal name of a document from title and id
+    // pub fn name_internal(&self) -> String {
+    //     format!("{}-{}.json", self.title, self.id)
+    // }
+
+    /// Synthesise the internal filepath of a document
+    pub fn doc_filepath_internal(&self) -> String {
+        format!("custom-documents/{}", self.name)
     }
 }

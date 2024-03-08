@@ -1,6 +1,4 @@
-//! Custom error types for the library.
-
-pub type Result<T> = core::result::Result<T, LLMError>;
+//! Custom error types for the AnythingLLM library.
 
 #[derive(thiserror::Error, Debug)]
 pub enum LLMError {

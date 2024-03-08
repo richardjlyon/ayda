@@ -1,25 +1,19 @@
 //! AnythingLLM API 'Documents' endpoints
 
-use crate::anythingllm::client::AnythingLLMClient;
-use crate::anythingllm::error::LLMError::{DocumentExistsError, DocumentNotFoundError};
-use crate::anythingllm::error::{LLMError, Result};
-use crate::anythingllm::models::document::{DocumentUploadResponseDocuments, DocumentsResponse};
+use std::fs;
+
 use regex::Regex;
 use reqwest::multipart;
 
-use std::fs;
-
-/// Represents a Document object in the AnythingLLM API
-#[derive(Debug)]
-pub struct Document {
-    pub id: String,
-    pub name: String,
-    pub title: String,
-}
+use crate::anythingllm::client::AnythingLLMClient;
+use crate::anythingllm::error::LLMError;
+use crate::anythingllm::error::LLMError::{DocumentExistsError, DocumentNotFoundError};
+use crate::anythingllm::models::document::{Document, DocumentsResponse};
 
 impl AnythingLLMClient {
     /// List all documents
-    pub async fn document_list(&self) -> Result<Vec<Document>> {
+    ///
+    pub async fn document_list(&self) -> Result<Vec<Document>, LLMError> {
         let response = self.get::<DocumentsResponse>("documents").await?;
 
         let mut documents = response.local_files.items[0]
@@ -40,23 +34,18 @@ impl AnythingLLMClient {
     }
 
     /// Add a new document
-    pub async fn document_add(&self, file_path: &str) -> Result<DocumentUploadResponseDocuments> {
+    ///
+    pub async fn document_add(&self, file_path: &str) -> Result<Document, LLMError> {
         let path = std::path::Path::new(file_path);
         if !path.exists() {
             return Err(DocumentNotFoundError(file_path.to_string()));
         }
 
         let file_name = filename_from_path(file_path);
-        if self
-            .document_list()
-            .await?
-            .iter()
-            .any(|doc| remove_uuid(&doc.name) == file_name)
-        {
+        if self.document_exists(&file_name).await? {
             return Err(DocumentExistsError(file_name));
         }
 
-        // TODO replace .expect with proper error handling
         let pdf_bytes = fs::read(file_path).expect("Failed to read file");
         let pdf_part = multipart::Part::bytes(pdf_bytes)
             .file_name(file_name.clone())
@@ -70,11 +59,41 @@ impl AnythingLLMClient {
             return Err(LLMError::DocumentAddError(file_path.to_string()));
         }
 
-        Ok(response.documents[0].clone())
+        let document = self.find_document(&file_name).await?;
+        Ok(document)
+    }
+
+    // Helper functions /////////////////////////////////////////////////////////////////////////////
+
+    async fn document_exists(&self, file_name: &str) -> Result<bool, LLMError> {
+        let documents = self.document_list().await?;
+        Ok(documents
+            .iter()
+            .any(|doc| remove_uuid(&doc.name) == *file_name))
+    }
+
+    async fn find_document(&self, file_name: &String) -> Result<Document, LLMError> {
+        let documents = self.get::<DocumentsResponse>("documents").await?;
+        let matched_document = documents.local_files.items[0]
+            .items
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|item| item.title.as_ref() == Some(file_name));
+
+        match matched_document {
+            Some(document) => Ok(Document {
+                id: document.id.clone().unwrap(),
+                name: document.name.clone(),
+                title: document
+                    .title
+                    .clone()
+                    .unwrap_or_else(|| document.name.clone()),
+            }),
+            None => Err(LLMError::DocumentAddError(file_name.to_string())),
+        }
     }
 }
-
-// Utility functions /////////////////////////////////////////////////////////////////////////////
 
 // FIXME Check whether I need this, and remove it if not
 // FIXME OR move it into DocumentUploadResponseDocuments
@@ -109,9 +128,11 @@ pub fn remove_uuid(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use dotenv::dotenv;
     use std::env;
+
+    use dotenv::dotenv;
+
+    use super::*;
 
     struct TestFixture {
         client: AnythingLLMClient,

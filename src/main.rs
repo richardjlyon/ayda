@@ -1,58 +1,63 @@
 use clap::Parser;
+use eyre::Context;
 
 use zot2llm::app::commands::document::{document_add, document_list};
-use zot2llm::app::commands::workspace::{workspace_create, workspace_delete};
-use zot2llm::app::commands::*;
+use zot2llm::app::commands::workspace::{workspace_create, workspace_delete, workspace_list};
+use zot2llm::app::commands::zotero::{zotero_add, zotero_list};
 use zot2llm::app::*;
 
+// #[derive(Deserialize, Debug)]
+// struct Config {
+//     zotero_user_id: String,
+//     anythingllm_api_key: String,
+// }
+
 #[tokio::main]
-async fn main() {
+async fn main() -> eyre::Result<()> {
+    color_eyre::install()?;
     let cli = Cli::parse();
 
+    // let dirs = directories_next::ProjectDirs::from("com", "richard", "zot2llm").unwrap();
+    // let config_path = dirs.config_dir().join("config.json");
+    // let file = std::fs::File::open(config_path).wrap_err("could not open config file")?;
+    // let data: Config = serde_json::from_reader(file).wrap_err("config file invalid")?;
+    // println!("{:?}", data);
+
+    use Commands::*;
     match cli.command {
-        Commands::Workspace { command } => match command {
-            WorkspaceCommands::List => {
-                if let Err(e) = workspace_list().await {
-                    eprintln!("Error: {}", e);
-                }
-            }
-            WorkspaceCommands::Create { workspace_name } => {
-                if let Err(e) = workspace_create(&workspace_name).await {
-                    eprintln!("Error: {}", e);
-                }
-            }
-            WorkspaceCommands::Delete { workspace_id } => {
-                if let Err(e) = workspace_delete(workspace_id).await {
-                    eprintln!("Error: {}", e);
-                }
-            }
-        },
+        Workspace {
+            command: WorkspaceCmd::List,
+        } => workspace_list().await.wrap_err("unable to list workspace"),
+        Workspace {
+            command: WorkspaceCmd::Create { workspace_name },
+        } => workspace_create(&workspace_name)
+            .await
+            .wrap_err("workspace_create"),
+        Workspace {
+            command: WorkspaceCmd::Delete { workspace_id },
+        } => workspace_delete(workspace_id)
+            .await
+            .wrap_err("workspace_delete"),
 
-        Commands::Document { command } => match command {
-            DocumentCommands::List => {
-                if let Err(e) = document_list().await {
-                    eprintln!("Error: {}", e);
-                }
-            }
-            DocumentCommands::Add {
-                document_filepath,
-                workspace_id,
-            } => {
-                if let Err(e) = document_add(&document_filepath, workspace_id).await {
-                    eprintln!("Error: {}", e);
-                }
-            }
-        },
+        Document {
+            command: DocumentCmd::List,
+        } => document_list().await.wrap_err("document_list"),
+        Document {
+            command:
+                DocumentCmd::Add {
+                    document_filepath,
+                    workspace_id,
+                },
+        } => document_add(&document_filepath, workspace_id)
+            .await
+            .wrap_err("document_add"),
 
-        Commands::Zotero { command } => match command {
-            ZoteroCommands::List => {
-                println!("Listing zotero collections");
-                // Implement the logic to list zotero collections here.
-            }
-            ZoteroCommands::Add { collection_id } => {
-                println!("Adding zotero collection: {}", collection_id);
-                // Implement the logic to add a zotero collection here.
-            }
-        },
+        Zotero {
+            command: ZoteroCmd::List,
+        } => zotero_list().await.wrap_err("zotero_list"),
+        Zotero {
+            command: ZoteroCmd::Add,
+        } => zotero_add().await.wrap_err("zotero_add"),
     }
+    .wrap_err("couldn't execute command")
 }

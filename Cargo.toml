@@ -8,6 +8,8 @@ description = "A tool for loading Zotero documents into a Large Language Model."
 dotenv = "0.15.0"
 reqwest = { version = "0.11.24", features = ["json", "multipart"] }
 serde = { version = "1.0.197", features = ["derive"] }
+eyre = "0.6.12"
+color-eyre = "0.6.2"
 tokio = { version = "1.36.0", features = ["full"] }
 serde_json = "1.0.114"
 regex = "1.10.3"
@@ -15,4 +17,7 @@ thiserror = "1.0.57"
 clap = { version = "4.5.2", features = ["derive"] }
 chrono = "0.4.35"
 colored = "2.1.0"
+mockito = "1.4.0"
+directories-next = "2.0.0"
+convert_case = "0.6.0"
 

@@ -1,5 +1,7 @@
-use dotenv::dotenv;
 use std::env;
+
+use dotenv::dotenv;
+
 use zot2llm::zotero::client::ZoteroClient;
 
 #[tokio::main]
@@ -10,7 +12,7 @@ async fn main() {
         &env::var("ZOTERO_USER_ID").expect("User ID not found"),
     );
 
-    match z.items_with_pdfs("NQF36WE7").await {
+    match z.pdf_items("NQF36WE7").await {
         Ok(items) => items
             .iter()
             .filter_map(|item| {

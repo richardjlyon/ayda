@@ -1,7 +1,7 @@
+use clap::{Parser, Subcommand};
+
 pub mod commands;
 pub mod error;
-
-use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[clap(
@@ -18,22 +18,22 @@ pub enum Commands {
     /// Manage workspaces
     Workspace {
         #[clap(subcommand)]
-        command: WorkspaceCommands,
+        command: WorkspaceCmd,
     },
     /// Manage documents
     Document {
         #[clap(subcommand)]
-        command: DocumentCommands,
+        command: DocumentCmd,
     },
     /// Manage Zotero collections
     Zotero {
         #[clap(subcommand)]
-        command: ZoteroCommands,
+        command: ZoteroCmd,
     },
 }
 
 #[derive(Subcommand)]
-pub enum WorkspaceCommands {
+pub enum WorkspaceCmd {
     /// Create a new workspace
     Create {
         /// Name of the workspace to create
@@ -49,7 +49,7 @@ pub enum WorkspaceCommands {
 }
 
 #[derive(Subcommand)]
-pub enum DocumentCommands {
+pub enum DocumentCmd {
     /// Add a new document
     Add {
         /// File path of the document
@@ -62,12 +62,9 @@ pub enum DocumentCommands {
 }
 
 #[derive(Subcommand)]
-pub enum ZoteroCommands {
-    /// Add a new collection
-    Add {
-        /// ID of the collection to add (list to get the id)
-        collection_id: u8,
-    },
+pub enum ZoteroCmd {
     /// List all collections
     List,
+    /// Add a new collection
+    Add,
 }
