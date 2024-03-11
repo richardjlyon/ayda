@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 /// It includes the base URL for the API and a `reqwest::Client` for making requests.
 use crate::anythingllm::error::LLMError;
 use crate::anythingllm::models::document::DocumentUploadResponse;
-use crate::anythingllm::models::workspace::{WorkspaceData, WorkspaceNewResponse};
+use crate::anythingllm::models::workspace::{Workspace, WorkspaceNewResponse};
 
 pub struct AnythingLLMClient {
     pub base_url: String,
@@ -49,6 +49,21 @@ impl AnythingLLMClient {
         }
     }
 
+    // Utility method for getting raw json from the API to help design a deserializeable struct
+    pub async fn get_json(&self, endpoint: &str) -> Result<Value, LLMError> {
+        let response = self
+            .client
+            .get(format!("{}/{}", self.base_url, endpoint))
+            .send()
+            .await?
+            .text()
+            .await?;
+
+        let json: Value = serde_json::from_str(&response).unwrap();
+
+        Ok(json)
+    }
+
     pub async fn delete(&self, endpoint: &str, slug: &str) -> Result<(), LLMError> {
         let url = format!("{}/{}/{}", self.base_url, endpoint, slug);
         let response = self.client.delete(&url).send().await?;
@@ -59,7 +74,7 @@ impl AnythingLLMClient {
         }
     }
 
-    pub async fn post_name(&self, endpoint: &str, name: &str) -> Result<WorkspaceData, LLMError> {
+    pub async fn post_name(&self, endpoint: &str, name: &str) -> Result<Workspace, LLMError> {
         let response = self
             .client
             .post(&format!("{}/{}", self.base_url, endpoint))
@@ -127,7 +142,7 @@ impl AnythingLLMClient {
         let data = response.text().await?;
         let json: Value = serde_json::from_str(&data).unwrap();
         let pretty_json = serde_json::to_string_pretty(&json).unwrap();
-        fs::write("document_upload.json", &pretty_json).expect("Unable to write file");
+        fs::write("document_upload.json", pretty_json).expect("Unable to write file");
 
         Ok(())
     }

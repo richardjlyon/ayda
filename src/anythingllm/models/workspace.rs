@@ -4,17 +4,17 @@ use serde::{Deserialize, Serialize};
 // v1/workspaces
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WorkspacesResponse {
-    pub workspaces: Vec<WorkspaceData>,
+    pub workspaces: Vec<Workspace>,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct WorkspaceNewResponse {
     pub message: Option<String>,
-    pub workspace: WorkspaceData,
+    pub workspace: Workspace,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct WorkspaceData {
+pub struct Workspace {
     pub id: u8,
     pub name: String,
     pub slug: String,

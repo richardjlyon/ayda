@@ -5,11 +5,11 @@ use serde_json::json;
 use crate::anythingllm::client::AnythingLLMClient;
 use crate::anythingllm::error::LLMError;
 use crate::anythingllm::error::LLMError::WorkspaceIdError;
-use crate::anythingllm::models::workspace::{WorkspaceData, WorkspacesResponse};
+use crate::anythingllm::models::workspace::{Workspace, WorkspacesResponse};
 
 impl AnythingLLMClient {
     /// Create a new workspace
-    pub async fn workspace_create(&self, name: &str) -> Result<WorkspaceData, LLMError> {
+    pub async fn workspace_create(&self, name: &str) -> Result<Workspace, LLMError> {
         self.post_name("workspace/new", name).await
     }
 
@@ -19,7 +19,7 @@ impl AnythingLLMClient {
     }
 
     /// Get all workspaces
-    pub async fn workspace_list(&self) -> Result<Vec<WorkspaceData>, LLMError> {
+    pub async fn workspace_list(&self) -> Result<Vec<Workspace>, LLMError> {
         let response = self.get::<WorkspacesResponse>("workspaces").await?;
         Ok(response.workspaces)
     }

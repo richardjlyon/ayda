@@ -37,6 +37,7 @@ impl AnythingLLMClient {
     ///
     pub async fn document_add(&self, file_path: &str) -> Result<Document, LLMError> {
         let path = std::path::Path::new(file_path);
+
         if !path.exists() {
             return Err(DocumentNotFoundError(file_path.to_string()));
         }
@@ -55,8 +56,12 @@ impl AnythingLLMClient {
         let form = multipart::Form::new().part("file", pdf_part);
         let response = self.post_multipart("document/upload", form).await?;
 
-        if !response.success || response.documents.is_empty() {
-            return Err(LLMError::DocumentAddError(file_path.to_string()));
+        if !response.success {
+            return Err(LLMError::ServerResponseFail(file_path.to_string()));
+        }
+
+        if response.documents.is_empty() {
+            return Err(LLMError::NoDocumentsError(file_path.to_string()));
         }
 
         let document = self.find_document(&file_name).await?;

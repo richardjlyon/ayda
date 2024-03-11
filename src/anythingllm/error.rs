@@ -14,6 +14,10 @@ pub enum LLMError {
     DocumentAddError(String),
     #[error("No Workspace with id {0}")]
     WorkspaceIdError(u8),
+    #[error("Server response fail: {0}")]
+    ServerResponseFail(String),
+    #[error("No documents: {0}")]
+    NoDocumentsError(String),
 }
 
 impl From<reqwest::Error> for LLMError {

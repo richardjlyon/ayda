@@ -16,6 +16,8 @@ pub enum ZoteroError {
     EnvVarError(#[from] VarError),
     #[error("Invalid input: {0}")]
     InvalidInput(u8),
+    #[error("PDF path error error: {0}")]
+    PDFPathError(String),
 }
 
 impl From<reqwest::Error> for ZoteroError {

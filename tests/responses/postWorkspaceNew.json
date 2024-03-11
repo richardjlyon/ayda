@@ -1,0 +1,18 @@
+{
+  "message": null,
+  "workspace": {
+    "chatMode": "chat",
+    "chatModel": null,
+    "createdAt": "2024-03-10T21:48:42.058Z",
+    "id": 72,
+    "lastUpdatedAt": "2024-03-10T21:48:42.058Z",
+    "name": "test-workspace",
+    "openAiHistory": 20,
+    "openAiPrompt": null,
+    "openAiTemp": null,
+    "similarityThreshold": 0.25,
+    "slug": "test-workspace-60741519",
+    "topN": 4,
+    "vectorTag": null
+  }
+}

@@ -8,9 +8,15 @@ use convert_case::{Case, Casing};
 use dotenv::dotenv;
 
 use crate::anythingllm::api::workspaces::UpdateParameter;
+use crate::anythingllm::error::LLMError::{
+    DocumentAddError, DocumentExistsError, DocumentNotFoundError, NoDocumentsError,
+    ServerResponseFail,
+};
+use crate::anythingllm::models::workspace::Workspace;
 use crate::app::commands;
 use crate::zotero::error::ZoteroError;
 use crate::zotero::error::ZoteroError::*;
+use crate::zotero::models::collection::CollectionResponseData;
 
 /// List Zotero collections
 pub async fn zotero_list() -> Result<(), ZoteroError> {
@@ -26,7 +32,7 @@ pub async fn zotero_list() -> Result<(), ZoteroError> {
     Ok(())
 }
 
-fn get_user_input(prompt: &str, max_value: usize) -> Result<u8, ZoteroError> {
+fn get_user_int(prompt: &str, max_value: usize) -> Result<u8, ZoteroError> {
     let mut stdout = io::stdout();
     print!("{}", prompt.green());
     stdout.flush().unwrap();
@@ -39,6 +45,16 @@ fn get_user_input(prompt: &str, max_value: usize) -> Result<u8, ZoteroError> {
     Ok(value)
 }
 
+fn get_user_string(prompt: &str) -> Result<String, ZoteroError> {
+    let mut stdout = io::stdout();
+    print!("{}", prompt.green());
+    stdout.flush().unwrap();
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    let value = input.trim().to_string();
+    Ok(value)
+}
+
 /// Create an AnythingLLM workspace and add a Zotero collection to it
 pub async fn zotero_add() -> Result<(), ZoteroError> {
     dotenv().ok();
@@ -46,19 +62,13 @@ pub async fn zotero_add() -> Result<(), ZoteroError> {
     let zotero = commands::zotero_client();
     let anythingllm = commands::anythingllm_client();
 
-    let mut stdout = io::stdout();
-
     println!("{}", "Adding a zotero collection".green().bold());
 
-    // Get collection to add
+    // Get collection to add to
 
     let collections = zotero.zotero_list().await?;
-    println!("{}", "Available collections:".green());
-    for (index, c) in collections.clone().iter().enumerate() {
-        println!("[{:>2}] {}", index + 1, c.name);
-    }
-
-    let collection_id = get_user_input("Enter the collection number to add: ", collections.len())?;
+    list_collections(&collections);
+    let collection_id = get_user_int("Enter the collection number to add: ", collections.len())?;
     let selected_collection = collections.get((collection_id - 1) as usize).unwrap();
 
     let pdfs = zotero.pdf_items(&selected_collection.key).await?;
@@ -67,49 +77,24 @@ pub async fn zotero_add() -> Result<(), ZoteroError> {
         return Ok(());
     }
 
-    // Get workspace to add to or create new workspace
+    // Get workspace to add to
 
     let workspaces = anythingllm.workspace_list().await?;
-
-    println!("{}", "Available workspaces:".green());
-    for (index, w) in workspaces.iter().enumerate() {
-        println!("[{:>2}] {} ({})", index + 1, w.name, w.slug);
-    }
-
-    print!(
-        "{}",
-        "Enter the workspace number to add to or 0 to create a new workspace: ".green()
-    );
-
-    stdout.flush().unwrap();
-    let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
-    let workspace_id: u8 = input.trim().parse().expect("Please enter a number");
-    if workspace_id > workspaces.len() as u8 {
-        return Err(InvalidWorkspaceId(collection_id));
-    }
-
-    dbg!(&workspace_id);
+    list_workspaces(&workspaces);
+    let workspace_id: u8 = get_user_int(
+        "Enter the workspace number or 0 to create a new workspace: ",
+        workspaces.len(),
+    )?;
 
     let selected_workspace = match workspace_id {
         0 => {
             let suggested_name =
                 format!("Zotero {}", selected_collection.name.to_case(Case::Title));
-            print!(
-                "{}",
-                format!(
-                    "Enter the name of the new workspace or 'return' to create workspace '{}': ",
-                    suggested_name.bold()
-                )
-                .to_string()
-                .green()
-            );
-            stdout.flush().unwrap();
-            let mut input = String::new();
-            io::stdin().read_line(&mut input).unwrap();
-            let workspace_name = input.trim();
-
-            match workspace_name {
+            let workspace_name = get_user_string(&format!(
+                "Enter the name of the new workspace or 'Return'' to create workspace '{}': ",
+                suggested_name
+            ))?;
+            match workspace_name.as_str() {
                 "" => anythingllm.workspace_create(&suggested_name).await?,
                 _ => anythingllm.workspace_create(&workspace_name).await?,
             }
@@ -117,33 +102,41 @@ pub async fn zotero_add() -> Result<(), ZoteroError> {
         _ => (*workspaces.get((workspace_id - 1) as usize).unwrap()).clone(),
     };
 
-    dbg!(&selected_workspace);
-
     println!(
-        "{}",
-        format!(
-            "Adding to workspace: {}",
-            selected_workspace.name.to_string().green().bold()
-        )
-        .green()
+        "Adding to workspace: {}",
+        selected_workspace.name.to_string().green().bold()
     );
 
-    println!("Selected workspace: {:?}", selected_workspace);
+    for pdf in pdfs.iter() {
+        let document_filepath = pdf.filepath(zotero_library_root_path).unwrap();
 
-    // Add collection to workspace
-
-    anythingllm
-        .workspace_create(&selected_collection.name)
-        .await?;
-
-    for pdf in pdfs.iter().take(3) {
-        // FIXME: Remove take(1)
-
-        let document_filepath = pdf.filepath(zotero_library_root_path).expect("No filepath");
-        let document = anythingllm
-            .document_add(&document_filepath)
-            .await
-            .expect("No document");
+        let document = match anythingllm.document_add(&document_filepath).await {
+            Ok(doc) => doc,
+            Err(DocumentExistsError(m)) => {
+                println!("Document exists: {}", m);
+                continue;
+            }
+            Err(DocumentNotFoundError(m)) => {
+                println!("Document not found: {}", m);
+                continue;
+            }
+            Err(DocumentAddError(m)) => {
+                println!("Document add error: {}", m);
+                continue;
+            }
+            Err(ServerResponseFail(m)) => {
+                println!("Server response failure: {}", m);
+                continue;
+            }
+            Err(NoDocumentsError(m)) => {
+                println!("Server response failure: {}", m);
+                continue;
+            }
+            Err(e) => {
+                println!("Other document add error: {} {}", e, document_filepath);
+                continue;
+            }
+        };
 
         anythingllm
             .workspace_update_embeddings(
@@ -155,4 +148,16 @@ pub async fn zotero_add() -> Result<(), ZoteroError> {
     }
 
     Ok(())
+}
+
+fn list_collections(collections: &[CollectionResponseData]) {
+    for (index, c) in collections.iter().enumerate() {
+        println!("[{:>2}] {}", index + 1, c.name);
+    }
+}
+
+fn list_workspaces(workspaces: &[Workspace]) {
+    for (index, w) in workspaces.iter().enumerate() {
+        println!("[{:>2}] {} ({})", index + 1, w.name, w.slug);
+    }
 }
