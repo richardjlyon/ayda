@@ -51,26 +51,11 @@ impl Client {
             .json::<AuthResponse>()
             .await
             .expect("FIXME failed to parse json");
+
         match result.authenticated {
             true => Ok(true),
             false => Err(LLMError::AuthError),
         }
-    }
-
-    pub async fn get_workspaces(&self) -> Result<Vec<Workspace>, LLMError> {
-        let response = self.get("workspaces").await?.error_for_status()?;
-        let workspaces_response = response.json::<GetWorkspacesResponse>().await?;
-
-        Ok(workspaces_response.workspaces)
-    }
-
-    pub async fn get_workspace_slug(&self, slug: &str) -> Result<Workspace, LLMError> {
-        let endpoint = format!("{}/{}", "workspace", slug);
-        let response = self.get(&endpoint).await?.error_for_status()?;
-
-        let workspace_slug_response = response.json::<GetWorkspaceSlugResponse>().await?;
-
-        Ok(workspace_slug_response.workspace)
     }
 
     pub async fn post_workspace_new(&self, name: &str) -> Result<Workspace, LLMError> {
@@ -88,9 +73,41 @@ impl Client {
         Ok(workspace_new_response.workspace)
     }
 
+    pub async fn get_workspaces(&self) -> Result<Vec<Workspace>, LLMError> {
+        let response = self.get("workspaces").await?.error_for_status()?;
+        let workspaces_response = response.json::<GetWorkspacesResponse>().await?;
+
+        Ok(workspaces_response.workspaces)
+    }
+
+    pub async fn get_workspace_slug(&self, slug: &str) -> Result<Workspace, LLMError> {
+        let url = format!("{}/{}", "workspace", slug);
+        let response = match self.get(&url).await {
+            Ok(response) => response,
+            Err(e) => return Err(LLMError::ServiceError(e.to_string())),
+        };
+
+        match response.json::<GetWorkspaceSlugResponse>().await {
+            Ok(workspace_slug_response) => Ok(workspace_slug_response.workspace),
+            Err(err) => {
+                if err.is_decode() {
+                    Err(LLMError::CustomError(
+                        "Invalid response from server: expected struct Workspace, got null"
+                            .to_string(),
+                    ))
+                } else {
+                    Err(LLMError::ServiceError(err.to_string()))
+                }
+            }
+        }
+    }
+
     pub async fn delete_workspace_slug(&self, slug: &str) -> Result<(), LLMError> {
         let url = format!("{}/{}/{}", self.base_url, "workspace", slug);
-        let response = self.client.delete(&url).send().await?.error_for_status()?;
+        let response = match self.client.delete(&url).send().await {
+            Ok(response) => response,
+            Err(e) => return Err(LLMError::ServiceError(e.to_string())),
+        };
 
         // NOTE: For a bad request, the API returns a "200 OK" status with the text "Bad Request"
         // not a "400 Bad Request"
@@ -155,9 +172,13 @@ pub enum LLMError {
     #[error("Bad request: {0}")]
     BadRequest(String),
     #[error("Service error: {0}")]
-    ServiceError(#[from] reqwest::Error),
+    ServiceError(String),
     #[error("Unhandled error")]
     UnhandledError,
+    #[error("Custom error: {0}")]
+    CustomError(String),
+    #[error("Request error: {0}")]
+    ReqwestError(#[from] reqwest::Error),
 }
 
 #[cfg(test)]
@@ -202,7 +223,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_auth_ok() {
+    async fn test_get_auth_ok() {
         dotenv::dotenv().ok();
         let api_key = &env::var("ANYTHINGLLM_API_KEY").expect("API key not found");
         let ip = &env::var("ANYTHINGLLM_IP").expect("IP not found");
@@ -213,7 +234,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_auth_err() {
+    async fn test_get_auth_err() {
         dotenv::dotenv().ok();
         let api_key = "INVALID_API_KEY";
         let ip = &env::var("ANYTHINGLLM_IP").expect("IP not found");
@@ -224,8 +245,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_get_workspaces() {
+        let fixture = Fixture::new().await;
+        let workspaces = fixture.client.get_workspaces().await.unwrap();
+        let workspace_slug = &fixture.workspace.slug;
+
+        assert!(workspaces.len() > 0);
+        assert!(workspaces
+            .iter()
+            .any(|w| w.slug == workspace_slug.to_string()));
+
+        fixture.remove().await;
+    }
+
+    #[tokio::test]
     async fn test_post_workspace_new() {
         let fixture = Fixture::new().await;
+        fixture.remove().await;
+    }
+
+    #[tokio::test]
+    async fn test_get_workspace_slug() {
+        let fixture = Fixture::new().await;
+        let test_workspace_slug = &fixture.workspace.slug;
+        let workspace = fixture
+            .client
+            .get_workspace_slug(&test_workspace_slug)
+            .await
+            .unwrap();
+
+        assert_eq!(workspace.slug, test_workspace_slug.to_string());
+
+        fixture.remove().await;
+    }
+
+    #[tokio::test]
+    async fn test_get_workspace_invalid_slug() {
+        let fixture = Fixture::new().await;
+        let workspace = fixture
+            .client
+            .get_workspace_slug("invalid-workspace-slug")
+            .await;
+
+        println!("{:?}", workspace);
+
         fixture.remove().await;
     }
 
@@ -246,31 +309,21 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_workspaces() {
+    async fn test_delete_workspace_invalid_slug() {
         let fixture = Fixture::new().await;
-        let workspaces = fixture.client.get_workspaces().await.unwrap();
-        let workspace_slug = &fixture.workspace.slug;
-
-        assert!(workspaces.len() > 0);
-        assert!(workspaces
-            .iter()
-            .any(|w| w.slug == workspace_slug.to_string()));
-
-        fixture.remove().await;
-    }
-
-    #[tokio::test]
-    async fn test_get_workspace_slug() {
-        let fixture = Fixture::new().await;
-        let test_workspace_slug = &fixture.workspace.slug;
-        let workspace = fixture
+        let response = fixture
             .client
-            .get_workspace_slug(&test_workspace_slug)
-            .await
-            .unwrap();
+            .delete_workspace_slug("invalid-workspace-slug")
+            .await;
 
-        assert_eq!(workspace.slug, test_workspace_slug.to_string());
+        match response {
+            Ok(_) => panic!("Expected an error, but got Ok(_)"),
+            Err(err) => match err {
+                LLMError::BadRequest(_) => (), // Test passes if we get here
+                _ => panic!("Expected LLMError::BadRequest, but got a different error"),
+            },
+        }
 
-        fixture.remove().await;
+        fixture.client.get_workspaces().await.unwrap();
     }
 }
