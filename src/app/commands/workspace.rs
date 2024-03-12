@@ -25,6 +25,7 @@ pub async fn workspace_list() -> eyre::Result<()> {
 }
 
 /// Create a new workspace
+///
 pub async fn workspace_create(workspace_name: &str) -> eyre::Result<()> {
     let client = commands::anythingllm_client();
     client.post_workspace_new(workspace_name).await?;
@@ -35,6 +36,7 @@ pub async fn workspace_create(workspace_name: &str) -> eyre::Result<()> {
 }
 
 /// Delete a workspace
+///
 pub async fn workspace_delete(workspace_id: i32) -> eyre::Result<()> {
     let client = commands::anythingllm_client();
     let workspace_slug = client

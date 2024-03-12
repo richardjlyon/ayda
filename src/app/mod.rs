@@ -19,11 +19,12 @@ pub enum Commands {
         #[clap(subcommand)]
         command: WorkspaceCmd,
     },
-    // /// Manage documents
-    // Document {
-    //     #[clap(subcommand)]
-    //     command: DocumentCmd,
-    // },
+
+    /// Manage documents
+    Document {
+        #[clap(subcommand)]
+        command: DocumentCmd,
+    },
     // /// Manage Zotero collections
     // Zotero {
     //     #[clap(subcommand)]
@@ -46,20 +47,20 @@ pub enum WorkspaceCmd {
         workspace_id: i32,
     },
 }
-//
-// #[derive(Subcommand)]
-// pub enum DocumentCmd {
-//     /// Add a new document
-//     Add {
-//         /// File path of the document
-//         document_filepath: String,
-//         /// ID of the workspace (use: 'workspace list')
-//         workspace_id: u8,
-//     },
-//     /// List all documents
-//     List,
-// }
-//
+
+#[derive(Subcommand)]
+pub enum DocumentCmd {
+    /// List all documents
+    List,
+    // /// Add a new document
+    // Add {
+    //     /// File path of the document
+    //     document_filepath: String,
+    //     /// ID of the workspace (use: 'workspace list')
+    //     workspace_id: u8,
+    // },
+}
+
 // #[derive(Subcommand)]
 // pub enum ZoteroCmd {
 //     /// List all collections

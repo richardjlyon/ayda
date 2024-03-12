@@ -1,5 +1,7 @@
 use clap::Parser;
 use eyre::Context;
+
+use zot2llm::app::commands::document::document_list;
 use zot2llm::app::commands::workspace::{workspace_create, workspace_delete, workspace_list};
 use zot2llm::app::*;
 
@@ -37,9 +39,10 @@ async fn main() -> eyre::Result<()> {
         } => workspace_delete(workspace_id)
             .await
             .wrap_err("workspace_delete"),
-        // Document {
-        //     command: DocumentCmd::List,
-        // } => document_list().await.wrap_err("document_list"),
+
+        Document {
+            command: DocumentCmd::List,
+        } => document_list().await.wrap_err("document_list"),
         // Document {
         //     command:
         //         DocumentCmd::Add {

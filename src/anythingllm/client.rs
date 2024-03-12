@@ -1,7 +1,5 @@
 //! Anythingllm client module
 
-use std::env;
-
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Response;
 use serde::{Deserialize, Serialize};

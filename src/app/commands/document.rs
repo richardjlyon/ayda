@@ -1,20 +1,26 @@
 //! Document commands
 //!
-// /// List all documents in a workspace
-// pub async fn document_list() -> Result<(), AppError> {
-//     let client = commands::anythingllm_client();
-//     let documents = client.document_list().await?;
-//
-//     println!("{}", "Listing all documents".green());
-//     // enumerate the documents and generate an index
-//
-//     for (idx, doc) in documents.iter().enumerate() {
-//         println!("DEBUG: document: {:#?}", doc);
-//         println!("{:>2}: {}", idx + 1, doc.title);
-//     }
-//
-//     Ok(())
-// }
+//! Document commands
+//!
+use colored::*;
+
+use crate::app::commands;
+
+/// List all documents in a workspace
+///
+pub async fn document_list() -> eyre::Result<()> {
+    let client = commands::anythingllm_client();
+    let documents = client.get_documents().await?;
+
+    println!("{}", "Listing all documents".green());
+    // enumerate the documents and generate an index
+
+    for (idx, doc) in documents.iter().enumerate() {
+        println!("{:>2}: {}", idx + 1, doc.title);
+    }
+
+    Ok(())
+}
 
 // Add a document to a workspace
 // pub async fn document_add(document_filepath: &str, workspace_id: u8) -> Result<(), AppError> {
