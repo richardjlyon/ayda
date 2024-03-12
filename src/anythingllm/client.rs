@@ -65,6 +65,8 @@ impl AnythingLLMClient {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use super::*;
 
     #[tokio::test]
