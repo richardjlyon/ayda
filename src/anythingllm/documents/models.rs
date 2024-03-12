@@ -1,9 +1,9 @@
 #[derive(Debug, serde::Deserialize)]
 pub struct Document {
     pub id: String,
-    pub name: String,
-    pub title: String,
-    pub cached: bool,
+    pub name: Option<String>,
+    pub title: Option<String>,
+    pub cached: Option<bool>,
 }
 
 impl From<&Item> for Document {
@@ -11,18 +11,18 @@ impl From<&Item> for Document {
         Document {
             id: item.id.clone().unwrap(),
             name: item.name.clone(),
-            title: item.title.clone().unwrap(),
-            cached: item.cached.unwrap(),
+            title: item.title.clone(),
+            cached: item.cached,
         }
     }
 }
 
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Clone)]
 pub struct Item {
     pub items: Option<Vec<Item>>,
     #[serde(rename = "type")]
-    pub doc_type: String,
-    pub name: String,
+    pub doc_type: Option<String>,
+    pub name: Option<String>,
     pub title: Option<String>,
     pub id: Option<String>,
     pub description: Option<String>,
@@ -35,4 +35,10 @@ pub struct Item {
 pub struct DocumentsResponse {
     #[serde(rename = "localFiles")]
     pub local_files: Item,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct DocumentMultipartResponse {
+    pub documents: Vec<Item>,
+    pub error: Option<String>,
 }

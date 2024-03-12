@@ -1,6 +1,7 @@
 //! Workspace commands
 //!
 use colored::*;
+use eyre::Context;
 
 use crate::anythingllm::error::LLMError::WorkspaceIdError;
 use crate::app::commands;
@@ -11,7 +12,10 @@ pub async fn workspace_list() -> eyre::Result<()> {
     println!("{}", "Listing all workspaces".green());
 
     let client = commands::anythingllm_client();
-    let workspaces = client.get_workspaces().await?;
+    let workspaces = client
+        .get_workspaces()
+        .await
+        .wrap_err("couldn't get workspaces")?;
 
     if workspaces.is_empty() {
         println!("{}", "No workspaces found".yellow());
@@ -48,7 +52,10 @@ pub async fn workspace_delete(workspace_id: i32) -> eyre::Result<()> {
         .slug
         .clone();
 
-    client.delete_workspace_slug(&workspace_slug).await?;
+    client
+        .delete_workspace_slug(&workspace_slug)
+        .await
+        .wrap_err("couldn't delete workspace with given slug")?;
 
     println!(
         "{} '{}'",

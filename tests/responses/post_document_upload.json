@@ -1,0 +1,19 @@
+{
+  "documents": [
+    {
+      "chunkSource": "",
+      "description": "No description found.",
+      "docAuthor": "no author found",
+      "docSource": "pdf file uploaded by the user.",
+      "id": "919bf23e-06ab-4acf-8454-42922a7a41ad",
+      "location": "custom-documents/Vogler-2001-Future-Directions-The-atmosphere-as-a-global-commons.pdf-919bf23e-06ab-4acf-8454-42922a7a41ad.json",
+      "pageContent": "The atmosphere as a global commons",
+      "published": "3/13/2024, 10:41:26 AM",
+      "title": "Vogler-2001-Future Directions The atmosphere as a global commons.pdf",
+      "token_count_estimate": 2837,
+      "url": "file:///app/collector/hotdir/Vogler-2001-Future-Directions-The-atmosphere-as-a-global-commons.pdf",
+      "wordCount": 2139
+    }
+  ],
+  "error": null
+}

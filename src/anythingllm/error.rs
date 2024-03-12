@@ -13,10 +13,14 @@ pub enum LLMError {
 
     #[error("Document exists: {0}")]
     DocumentExistsError(String),
-    #[error("Document not found on filesystem: {0}")]
-    DocumentNotFoundFileSystemError(String),
+    #[error("Document not found on filesystem")]
+    FileSystemError(#[from] std::io::Error),
     #[error("Document not found in workspace: {0}")]
     DocumentNotFoundWorkspaceError(String),
+    #[error("Failed to load PDF")]
+    PDFLoadError(#[from] lopdf::Error),
+    #[error("Multipart form encoding error: {0}")]
+    MultipartFormError(String),
 
     #[error("Custom error: {0}")]
     CustomError(String),

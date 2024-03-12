@@ -1,8 +1,12 @@
+//! zor2llm
+//!
+//!
+//!
 use clap::Parser;
 use eyre::Context;
 
-use zot2llm::app::commands::document::document_list;
-use zot2llm::app::commands::workspace::{workspace_create, workspace_delete, workspace_list};
+use zot2llm::app::commands::document::*;
+use zot2llm::app::commands::workspace::*;
 use zot2llm::app::*;
 
 // #[derive(Deserialize, Debug)]
@@ -43,16 +47,16 @@ async fn main() -> eyre::Result<()> {
         Document {
             command: DocumentCmd::List,
         } => document_list().await.wrap_err("document_list"),
-        // Document {
-        //     command:
-        //         DocumentCmd::Add {
-        //             document_filepath,
-        //             workspace_id,
-        //         },
-        // } => document_add(&document_filepath, workspace_id)
-        //     .await
-        //     .wrap_err("document_add"),
-        //
+
+        Document {
+            command:
+                DocumentCmd::Upload {
+                    document_filepath,
+                    workspace_id,
+                },
+        } => document_upload(&document_filepath, workspace_id)
+            .await
+            .wrap_err("document_add"),
         // Zotero {
         //     command: ZoteroCmd::List,
         // } => zotero_list().await.wrap_err("zotero_list"),

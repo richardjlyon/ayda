@@ -21,4 +21,6 @@ mockito = "1.4.0"
 directories-next = "2.0.0"
 convert_case = "0.6.0"
 uuid = { version = "1.7.0", features = ["v4"] }
+lopdf = { version = "0.32.0", features = ["nom_parser"] }
+tempfile = "3.10.1"
 

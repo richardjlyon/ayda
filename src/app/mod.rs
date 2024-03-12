@@ -1,3 +1,5 @@
+//! A command line application.
+
 use clap::{Parser, Subcommand};
 
 pub mod commands;
@@ -52,13 +54,14 @@ pub enum WorkspaceCmd {
 pub enum DocumentCmd {
     /// List all documents
     List,
-    // /// Add a new document
-    // Add {
-    //     /// File path of the document
-    //     document_filepath: String,
-    //     /// ID of the workspace (use: 'workspace list')
-    //     workspace_id: u8,
-    // },
+
+    /// Add a new document
+    Upload {
+        /// File path of the document
+        document_filepath: String,
+        /// ID of the workspace (use: 'workspace list')
+        workspace_id: i32,
+    },
 }
 
 // #[derive(Subcommand)]

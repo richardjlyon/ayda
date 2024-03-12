@@ -1,6 +1,7 @@
 //! Anythingllm client module
 
 use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::multipart::Form;
 use reqwest::Response;
 use serde::{Deserialize, Serialize};
 
@@ -55,6 +56,19 @@ impl AnythingLLMClient {
         let response = self
             .client
             .get(url.clone())
+            .send()
+            .await?
+            .error_for_status()?;
+
+        Ok(response)
+    }
+
+    pub async fn post_multipart(&self, endpoint: &str, form: Form) -> Result<Response, LLMError> {
+        let url = format!("{}/{}", self.base_url, endpoint);
+        let response = self
+            .client
+            .post(url.clone())
+            .multipart(form)
             .send()
             .await?
             .error_for_status()?;

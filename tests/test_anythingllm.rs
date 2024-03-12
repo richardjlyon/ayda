@@ -8,7 +8,7 @@ mod tests {
 
     use crate::common::Fixture;
 
-//  // Construction ///////////////////////////////////////////////////////////////////////////////
+    //  // Construction ///////////////////////////////////////////////////////////////////////////////
 
     #[tokio::test]
     async fn test_client_new() {
@@ -147,18 +147,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_post_document_upload() {
-        // let fixture = Fixture::new().await;
-        // let file_path =
-        //     "/Users/richardlyon/Zotero/storage/2CPPXSFP/Vogler (2001) Future Directions.pdf";
-        // let doc = fixture
-        //     .client
-        //     .post_document_upload(&file_path)
-        //     .await
-        //     .unwrap();
-        //
-        // // confirm the document is in the workspace
-        //
-        // fixture.remove().await;
+        let fixture = Fixture::new().await;
+        let file_path = "tests/test_data/2022-01-01-Test-Document.pdf";
+        let doc = fixture
+            .client
+            .post_document_upload(&file_path)
+            .await
+            .unwrap();
+
+        // confirm the document is in the workspace
+
+        fixture.remove().await;
     }
 
     #[tokio::test]
