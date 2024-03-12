@@ -1,9 +1,7 @@
 use clap::Parser;
 use eyre::Context;
 
-use zot2llm::app::commands::document::{document_add, document_list};
-use zot2llm::app::commands::workspace::{workspace_create, workspace_delete, workspace_list};
-use zot2llm::app::commands::zotero::{zotero_add, zotero_list};
+use zot2llm::app::commands::workspace::workspace_list;
 use zot2llm::app::*;
 
 // #[derive(Deserialize, Debug)]
@@ -28,36 +26,36 @@ async fn main() -> eyre::Result<()> {
         Workspace {
             command: WorkspaceCmd::List,
         } => workspace_list().await.wrap_err("unable to list workspace"),
-        Workspace {
-            command: WorkspaceCmd::Create { workspace_name },
-        } => workspace_create(&workspace_name)
-            .await
-            .wrap_err("workspace_create"),
-        Workspace {
-            command: WorkspaceCmd::Delete { workspace_id },
-        } => workspace_delete(workspace_id)
-            .await
-            .wrap_err("workspace_delete"),
+        // Workspace {
+        //     command: WorkspaceCmd::Create { workspace_name },
+        // } => workspace_create(&workspace_name)
+        //     .await
+        //     .wrap_err("workspace_create"),
+        // Workspace {
+        //     command: WorkspaceCmd::Delete { workspace_id },
+        // } => workspace_delete(workspace_id)
+        //     .await
+        //     .wrap_err("workspace_delete"),
 
-        Document {
-            command: DocumentCmd::List,
-        } => document_list().await.wrap_err("document_list"),
-        Document {
-            command:
-                DocumentCmd::Add {
-                    document_filepath,
-                    workspace_id,
-                },
-        } => document_add(&document_filepath, workspace_id)
-            .await
-            .wrap_err("document_add"),
-
-        Zotero {
-            command: ZoteroCmd::List,
-        } => zotero_list().await.wrap_err("zotero_list"),
-        Zotero {
-            command: ZoteroCmd::Add,
-        } => zotero_add().await.wrap_err("zotero_add"),
+        // Document {
+        //     command: DocumentCmd::List,
+        // } => document_list().await.wrap_err("document_list"),
+        // Document {
+        //     command:
+        //         DocumentCmd::Add {
+        //             document_filepath,
+        //             workspace_id,
+        //         },
+        // } => document_add(&document_filepath, workspace_id)
+        //     .await
+        //     .wrap_err("document_add"),
+        //
+        // Zotero {
+        //     command: ZoteroCmd::List,
+        // } => zotero_list().await.wrap_err("zotero_list"),
+        // Zotero {
+        //     command: ZoteroCmd::Add,
+        // } => zotero_add().await.wrap_err("zotero_add"),
     }
     .wrap_err("couldn't execute command")
 }

@@ -4,8 +4,8 @@
 use std::env;
 
 use regex::Regex;
-use reqwest::{multipart, Response, StatusCode};
 use reqwest::header::{HeaderMap, HeaderValue};
+use reqwest::{multipart, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -38,7 +38,6 @@ impl From<&Item> for Document {
 }
 
 // derive Document from Item
-
 
 #[derive(Debug, serde::Deserialize)]
 struct GetWorkspaceNewResponse {
@@ -75,7 +74,6 @@ struct Item {
     doc_author: Option<String>,
     cached: Option<bool>,
 }
-
 
 // #[derive(Debug, Deserialize)]
 // struct DocumentUploadResponse {
@@ -218,7 +216,6 @@ impl Client {
 
         Ok(documents)
     }
-
 
     // Upload a new file to AnythingLLM to be parsed and prepared for embedding
     // async fn post_document_upload(&self, file_path: &str) -> Result<Document, LLMError> {
@@ -399,12 +396,11 @@ async fn main() -> eyre::Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-// Fixtures ////////////////////////////////////////////////////////////////////////////////////
+    // Fixtures ////////////////////////////////////////////////////////////////////////////////////
 
     struct Fixture {
         client: Client,
