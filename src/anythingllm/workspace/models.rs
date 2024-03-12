@@ -17,6 +17,6 @@ pub struct GetWorkspaceNewResponse {
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct GetWorkspaceSlugResponse {
+pub struct GetWorkspaceSlugResponse {
     pub workspace: Workspace,
 }

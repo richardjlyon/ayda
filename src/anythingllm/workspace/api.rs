@@ -2,7 +2,9 @@ use serde_json::json;
 
 use crate::anythingllm::client::AnythingLLMClient;
 use crate::anythingllm::error::LLMError;
-use crate::anythingllm::workspace::{GetWorkspaceNewResponse, GetWorkspacesResponse, Workspace};
+use crate::anythingllm::workspace::{
+    GetWorkspaceNewResponse, GetWorkspaceSlugResponse, GetWorkspacesResponse, Workspace,
+};
 
 impl AnythingLLMClient {
     /// GET /workspaces
@@ -12,6 +14,28 @@ impl AnythingLLMClient {
         let workspaces_response = response.json::<GetWorkspacesResponse>().await?;
 
         Ok(workspaces_response.workspaces)
+    }
+
+    /// GET / workspace/{slug}
+    pub async fn get_workspace_slug(&self, slug: &str) -> Result<Workspace, LLMError> {
+        let response = match self.get(format!("{}/{}", "workspace", slug).as_str()).await {
+            Ok(response) => response,
+            Err(e) => return Err(LLMError::ServiceError(e.to_string())),
+        };
+
+        match response.json::<GetWorkspaceSlugResponse>().await {
+            Ok(workspace_slug_response) => Ok(workspace_slug_response.workspace),
+            Err(err) => {
+                if err.is_decode() {
+                    Err(LLMError::CustomError(
+                        "Invalid response from server: expected struct Workspace, got null"
+                            .to_string(),
+                    ))
+                } else {
+                    Err(LLMError::ServiceError(err.to_string()))
+                }
+            }
+        }
     }
 
     /// POST /workspace/new
