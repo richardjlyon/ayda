@@ -35,11 +35,11 @@ pub enum Commands {
 pub enum WorkspaceCmd {
     /// List all workspaces
     List,
-    // /// Create a new workspace
-    // Create {
-    //     /// Name of the workspace to create
-    //     workspace_name: String,
-    // },
+    /// Create a new workspace
+    Create {
+        /// Name of the workspace to create
+        workspace_name: String,
+    },
     // /// Delete an existing workspace
     // Delete {
     //     /// id of the workspace to delete (use 'list' to get the id)

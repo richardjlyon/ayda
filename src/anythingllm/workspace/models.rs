@@ -11,7 +11,7 @@ pub struct GetWorkspacesResponse {
 }
 
 #[derive(Debug, serde::Deserialize)]
-struct GetWorkspaceNewResponse {
+pub struct GetWorkspaceNewResponse {
     pub workspace: Workspace,
     pub message: Option<String>,
 }

@@ -1,11 +1,13 @@
-pub mod document;
-pub mod workspace;
-pub mod zotero;
+use std::env;
+
+pub use workspace::workspace_list;
 
 use crate::anythingllm::client::AnythingLLMClient;
 use crate::zotero::client::ZoteroClient;
-use std::env;
-pub use workspace::workspace_list;
+
+pub mod document;
+pub mod workspace;
+pub mod zotero;
 
 pub fn anythingllm_client() -> AnythingLLMClient {
     dotenv::dotenv().ok();

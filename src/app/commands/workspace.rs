@@ -5,12 +5,12 @@ use colored::*;
 use crate::app::commands;
 
 /// List all workspaces
+///
 pub async fn workspace_list() -> eyre::Result<()> {
     println!("{}", "Listing all workspaces".green());
+
     let client = commands::anythingllm_client();
-    let workspaces = client
-        .get_workspaces()
-        .await?;
+    let workspaces = client.get_workspaces().await?;
 
     if workspaces.is_empty() {
         println!("{}", "No workspaces found".yellow());
@@ -23,15 +23,15 @@ pub async fn workspace_list() -> eyre::Result<()> {
     Ok(())
 }
 
-// /// Create a new workspace
-// pub async fn workspace_create(workspace_name: &str) -> Result<(), AppError> {
-//     let client = commands::anythingllm_client();
-//     client.workspace_create(workspace_name).await?;
-//
-//     println!("Added workspace '{}'", workspace_name);
-//
-//     Ok(())
-// }
+/// Create a new workspace
+pub async fn workspace_create(workspace_name: &str) -> eyre::Result<()> {
+    let client = commands::anythingllm_client();
+    client.post_workspace_new(workspace_name).await?;
+
+    println!("Added workspace '{}'", workspace_name);
+
+    Ok(())
+}
 //
 // /// Delete a workspace
 // pub async fn workspace_delete(workspace_id: u8) -> Result<(), AppError> {

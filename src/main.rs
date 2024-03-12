@@ -1,7 +1,7 @@
 use clap::Parser;
 use eyre::Context;
 
-use zot2llm::app::commands::workspace::workspace_list;
+use zot2llm::app::commands::workspace::{workspace_create, workspace_list};
 use zot2llm::app::*;
 
 // #[derive(Deserialize, Debug)]
@@ -26,11 +26,12 @@ async fn main() -> eyre::Result<()> {
         Workspace {
             command: WorkspaceCmd::List,
         } => workspace_list().await.wrap_err("unable to list workspace"),
-        // Workspace {
-        //     command: WorkspaceCmd::Create { workspace_name },
-        // } => workspace_create(&workspace_name)
-        //     .await
-        //     .wrap_err("workspace_create"),
+
+        Workspace {
+            command: WorkspaceCmd::Create { workspace_name },
+        } => workspace_create(&workspace_name)
+            .await
+            .wrap_err("unable to create workspace"),
         // Workspace {
         //     command: WorkspaceCmd::Delete { workspace_id },
         // } => workspace_delete(workspace_id)
