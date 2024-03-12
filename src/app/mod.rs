@@ -40,11 +40,11 @@ pub enum WorkspaceCmd {
         /// Name of the workspace to create
         workspace_name: String,
     },
-    // /// Delete an existing workspace
-    // Delete {
-    //     /// id of the workspace to delete (use 'list' to get the id)
-    //     workspace_id: u8,
-    // },
+    /// Delete an existing workspace
+    Delete {
+        /// id of the workspace to delete (use 'list' to get the id)
+        workspace_id: i32,
+    },
 }
 //
 // #[derive(Subcommand)]

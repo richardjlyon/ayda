@@ -29,4 +29,23 @@ impl AnythingLLMClient {
 
         Ok(workspace_new_response.workspace)
     }
+
+    /// DELETE /workspace/{slug}
+    pub async fn delete_workspace_slug(&self, slug: &str) -> Result<(), LLMError> {
+        let url = format!("{}/{}/{}", self.base_url, "workspace", slug);
+        let response = match self.client.delete(&url).send().await {
+            Ok(response) => response,
+            Err(e) => return Err(LLMError::ServiceError(e.to_string())),
+        };
+
+        // NOTE: For a bad request, the API returns a "200 OK" status with the text "Bad Request"
+        // not a "400 Bad Request"
+        let response_text = response.text().await?;
+
+        if response_text == "Bad Request" {
+            return Err(LLMError::BadRequest(url));
+        }
+
+        Ok(())
+    }
 }

@@ -8,6 +8,8 @@ pub enum LLMError {
     BadRequest(String),
     #[error("Service error: {0}")]
     ServiceError(String),
+    #[error("Workspace not found: {0}")]
+    WorkspaceIdError(i32),
 
     #[error("Document exists: {0}")]
     DocumentExistsError(String),

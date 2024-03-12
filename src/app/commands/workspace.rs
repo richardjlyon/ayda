@@ -2,6 +2,7 @@
 //!
 use colored::*;
 
+use crate::anythingllm::error::LLMError::WorkspaceIdError;
 use crate::app::commands;
 
 /// List all workspaces
@@ -32,26 +33,26 @@ pub async fn workspace_create(workspace_name: &str) -> eyre::Result<()> {
 
     Ok(())
 }
-//
-// /// Delete a workspace
-// pub async fn workspace_delete(workspace_id: u8) -> Result<(), AppError> {
-//     let client = commands::anythingllm_client();
-//     let workspace_slug = client
-//         .workspace_list()
-//         .await?
-//         .iter()
-//         .find(|ws| ws.id == workspace_id)
-//         .ok_or(WorkspaceIdError(workspace_id))?
-//         .slug
-//         .clone();
-//
-//     client.workspace_delete(&workspace_slug).await?;
-//
-//     println!(
-//         "{} '{}'",
-//         "Removed workspace".green(),
-//         workspace_id.to_string().bold()
-//     );
-//
-//     Ok(())
-// }
+
+/// Delete a workspace
+pub async fn workspace_delete(workspace_id: i32) -> eyre::Result<()> {
+    let client = commands::anythingllm_client();
+    let workspace_slug = client
+        .get_workspaces()
+        .await?
+        .iter()
+        .find(|ws| ws.id == workspace_id)
+        .ok_or(WorkspaceIdError(workspace_id))?
+        .slug
+        .clone();
+
+    client.delete_workspace_slug(&workspace_slug).await?;
+
+    println!(
+        "{} '{}'",
+        "Removed workspace".green(),
+        workspace_id.to_string().bold()
+    );
+
+    Ok(())
+}
