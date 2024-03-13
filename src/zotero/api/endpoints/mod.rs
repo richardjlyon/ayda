@@ -1,2 +1,2 @@
 pub mod collections;
-pub mod item;
+pub mod items;

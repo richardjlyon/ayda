@@ -1,12 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CollectionResponse {
-    pub data: CollectionResponseData,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CollectionsResponse {
+    pub data: Collection,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct CollectionResponseData {
+pub struct Collection {
     pub key: String,
     pub name: String,
 }

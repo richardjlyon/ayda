@@ -31,11 +31,35 @@ impl ZoteroClient {
         }
     }
 
-    pub async fn get<T: DeserializeOwned>(&self, endpoint: &str) -> Result<T, ZoteroError> {
+    /// Get an endpoint and deserialize
+    pub async fn get<T: DeserializeOwned>(
+        &self,
+        endpoint: &str,
+        params: Option<Vec<(&str, &str)>>,
+    ) -> Result<T, ZoteroError> {
         let url = format!("{}/{}", self.base_url, endpoint);
-        let response = self.client.get(&url).send().await?;
 
-        // TODO insert error handling here
+        // let response = self.client.get(&url).send().await?.error_for_status()?;
+        // let body = response.text().await?;
+        // let json: Value = serde_json::from_str(&body).unwrap();
+        // let json_pretty = serde_json::to_string_pretty(&json).unwrap();
+        // std::fs::write("../../tests/responses/Zotero/response.json", json_pretty).unwrap();
+
+        // create an empty vector of <&str, &str>
+        let params = match params {
+            Some(p) => p,
+            None => Vec::new(),
+        };
+
+        // let mut params: Vec<(&str, &str)> = Vec::new();
+
+        let response = self
+            .client
+            .get(&url)
+            .query(&params)
+            .send()
+            .await?
+            .error_for_status()?;
         let data = response.json::<T>().await?;
 
         Ok::<T, ZoteroError>(data)

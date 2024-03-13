@@ -1,26 +1,34 @@
-//! Zotero API 'Collections' endpoints
+//! Zotero API '/collections' endpoints
 
-use crate::zotero::api::models::collection::{CollectionResponse, CollectionResponseData};
+use crate::zotero::api::models::collection::{Collection, CollectionsResponse};
 use crate::zotero::client::ZoteroClient;
 use crate::zotero::error::ZoteroError;
 
 impl ZoteroClient {
-    /// Get all collections
-    pub async fn zotero_list(&self) -> Result<Vec<CollectionResponseData>, ZoteroError> {
-        let response = self.get::<Vec<CollectionResponse>>("collections").await?;
+    /// GET /collections
+    /// All collections in the library
+    pub async fn get_collections(
+        &self,
+        params: Option<Vec<(&str, &str)>>,
+    ) -> Result<Vec<Collection>, ZoteroError> {
+        let response = self
+            .get::<Vec<CollectionsResponse>>("collections", params)
+            .await?;
+        let collections: Vec<Collection> = response.iter().map(|c| c.data.clone()).collect();
 
-        Ok(response.iter().map(|c| c.data.clone()).collect())
+        Ok(collections)
+    }
+
+    /// GET /collections/{collectionKey}
+    /// A specific collection in the library
+    pub async fn get_collections_collection_key(
+        &self,
+        collection_key: &str,
+        params: Option<Vec<(&str, &str)>>,
+    ) -> Result<Collection, ZoteroError> {
+        let response = self
+            .get::<CollectionsResponse>(&format!("collections/{}", collection_key), params)
+            .await?;
+        Ok(response.data.clone())
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[tokio::test]
-//     async fn zotero_list_returns_collections() {
-//         let c = ZoteroClient::new("key", "user");
-//         let collections = c.zotero_list().await.unwrap();
-//         assert!(collections.len() > 0);
-//     }
-// }

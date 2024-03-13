@@ -38,7 +38,7 @@ pub struct ZoteroFixture {
 }
 
 impl ZoteroFixture {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
         dotenv::dotenv().ok();
         let api_key = &env::var("ZOTERO_API_KEY").expect("API key not found");
         let user_id = &env::var("ZOTERO_USER_ID").expect("User ID not found");
