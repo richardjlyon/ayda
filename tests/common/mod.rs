@@ -2,13 +2,14 @@ use std::env;
 
 use zot2llm::anythingllm::client::AnythingLLMClient;
 use zot2llm::anythingllm::workspace::Workspace;
+use zot2llm::zotero::client::ZoteroClient;
 
-pub struct Fixture {
+pub struct AnythingLLMFixture {
     pub client: AnythingLLMClient,
     pub workspace: Workspace,
 }
 
-impl Fixture {
+impl AnythingLLMFixture {
     pub async fn new() -> Self {
         dotenv::dotenv().ok();
         let api_key = &env::var("ANYTHINGLLM_API_KEY").expect("API key not found");
@@ -29,5 +30,20 @@ impl Fixture {
             .client
             .delete_workspace_slug(&self.workspace.slug)
             .await;
+    }
+}
+
+pub struct ZoteroFixture {
+    pub client: zot2llm::zotero::client::ZoteroClient,
+}
+
+impl ZoteroFixture {
+    pub fn new() -> Self {
+        dotenv::dotenv().ok();
+        let api_key = &env::var("ZOTERO_API_KEY").expect("API key not found");
+        let user_id = &env::var("ZOTERO_USER_ID").expect("User ID not found");
+        let client = ZoteroClient::new(api_key, user_id);
+
+        Self { client }
     }
 }

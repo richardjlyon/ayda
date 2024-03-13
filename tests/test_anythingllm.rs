@@ -6,7 +6,7 @@ mod tests {
     use zot2llm::anythingllm::client::AnythingLLMClient;
     use zot2llm::anythingllm::error::LLMError;
 
-    use crate::common::Fixture;
+    use crate::common::AnythingLLMFixture;
 
     //  // Construction ///////////////////////////////////////////////////////////////////////////////
 
@@ -49,13 +49,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_post_workspace_new() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         fixture.remove().await;
     }
 
     #[tokio::test]
     async fn test_get_workspaces() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         let workspaces = fixture.client.get_workspaces().await.unwrap();
         let workspace_slug = &fixture.workspace.slug;
 
@@ -69,7 +69,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_workspace_slug() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         let test_workspace_slug = &fixture.workspace.slug;
         let workspace = fixture
             .client
@@ -84,7 +84,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_workspace_invalid_slug() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         let workspace = fixture
             .client
             .get_workspace_slug("invalid-workspace-slug")
@@ -97,7 +97,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_workspace_slug() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         let test_workspace_slug = &fixture.workspace.slug;
         let _ = fixture
             .client
@@ -113,7 +113,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_workspace_invalid_slug() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         let response = fixture
             .client
             .delete_workspace_slug("invalid-workspace-slug")
@@ -137,7 +137,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_documents() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
 
         let docs = fixture.client.get_documents().await.unwrap();
         assert!(docs.len() > 0);
@@ -147,7 +147,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_post_document_upload() {
-        let fixture = Fixture::new().await;
+        let fixture = AnythingLLMFixture::new().await;
         let file_path = "tests/test_data/2022-01-01-Test-Document.pdf";
         let doc = fixture
             .client

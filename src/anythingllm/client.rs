@@ -12,6 +12,7 @@ struct AuthResponse {
     authenticated: bool,
 }
 
+/// An AnythingLLM client.
 pub struct AnythingLLMClient {
     pub base_url: String,
     pub client: reqwest::Client,
@@ -33,6 +34,7 @@ impl AnythingLLMClient {
         Self { base_url, client }
     }
 
+    /// Get the authentication status from the AnythingLLM instance.
     pub async fn get_auth(&self) -> std::result::Result<bool, LLMError> {
         let response = match self.get("auth").await {
             Ok(response) => response,

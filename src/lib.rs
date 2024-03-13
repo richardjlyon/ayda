@@ -1,6 +1,9 @@
 //! # zot2llm
 //!
-//! The `zot2llm` crate provides a library for converting Zotero data to an Anything LLM library.
+//! A library for applying a large language model to a [Zotero](https://www.zotero.org/) library.
+//!
+//! [Zotero](https://www.zotero.org/) is a free, easy-to-use tool to help you collect, organize,
+//! annotate, cite, and share research.
 
 pub mod anythingllm;
 pub mod app;

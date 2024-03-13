@@ -80,15 +80,12 @@ impl AnythingLLMClient {
                 .ok()
                 .and_then(|d| d.get_mut(b"Title").ok())
                 .map(|o| o.as_str_mut())
-                else {
-                    return;
-                };
-            println!("Title: {}", std::str::from_utf8(title).unwrap());
+            else {
+                return;
+            };
             // let new_title = "This is a bollocks title";
             title.clear();
             title.extend_from_slice(new_title.as_bytes());
-
-            println!("New Title: {}", std::str::from_utf8(title).unwrap());
         }) {}
         Ok(doc)
     }
@@ -143,12 +140,16 @@ impl AnythingLLMClient {
 }
 
 mod tests {
+    // use super::*;
+
+    use crate::anythingllm::client::AnythingLLMClient;
+
     #[test]
     fn test_filename_from_path() {
         let filename =
             "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf";
         let expected = "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf";
 
-        assert_eq!(filename_from_path(filename), expected);
+        assert_eq!(AnythingLLMClient::filename_from_path(filename), expected);
     }
 }

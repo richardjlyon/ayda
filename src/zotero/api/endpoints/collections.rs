@@ -1,8 +1,8 @@
 //! Zotero API 'Collections' endpoints
 
+use crate::zotero::api::models::collection::{CollectionResponse, CollectionResponseData};
 use crate::zotero::client::ZoteroClient;
 use crate::zotero::error::ZoteroError;
-use crate::zotero::models::collection::{CollectionResponse, CollectionResponseData};
 
 impl ZoteroClient {
     /// Get all collections
@@ -12,3 +12,15 @@ impl ZoteroClient {
         Ok(response.iter().map(|c| c.data.clone()).collect())
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[tokio::test]
+//     async fn zotero_list_returns_collections() {
+//         let c = ZoteroClient::new("key", "user");
+//         let collections = c.zotero_list().await.unwrap();
+//         assert!(collections.len() > 0);
+//     }
+// }

@@ -32,7 +32,7 @@ pub async fn document_list() -> eyre::Result<()> {
 
 /// Add a document to a workspace
 ///
-pub async fn document_upload(document_filepath: &str, workspace_id: i32) -> eyre::Result<()> {
+pub async fn document_upload(document_filepath: &str) -> eyre::Result<()> {
     let client = commands::anythingllm_client();
     let document = client
         .post_document_upload(document_filepath)

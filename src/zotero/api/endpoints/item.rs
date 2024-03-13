@@ -1,7 +1,11 @@
 use reqwest::Error;
 
+use crate::zotero::api::models::item::Item;
 use crate::zotero::client::ZoteroClient;
-use crate::zotero::models::item::Item;
+
+// pub use api::*;
+// use crate::zotero::api::models::item::Item;
+// use crate::zotero::client::ZoteroClient;
 
 impl ZoteroClient {
     pub async fn pdf_items(&self, collection_key: &str) -> Result<Vec<Item>, Error> {

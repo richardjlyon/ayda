@@ -1,2 +1,2 @@
-mod collections;
-pub mod item;
+pub mod endpoints;
+pub mod models;

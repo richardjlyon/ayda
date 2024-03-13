@@ -1,4 +1,4 @@
-//! zor2llm
+//! zot2llm
 //!
 //!
 //!
@@ -54,7 +54,7 @@ async fn main() -> eyre::Result<()> {
                     document_filepath,
                     workspace_id,
                 },
-        } => document_upload(&document_filepath, workspace_id)
+        } => document_upload(&document_filepath)
             .await
             .wrap_err("document_add"),
         // Zotero {

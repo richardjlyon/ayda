@@ -2,8 +2,8 @@ use std::env;
 
 use dotenv::dotenv;
 
+use zot2llm::zotero::api::models::collection::CollectionResponse;
 use zot2llm::zotero::client::ZoteroClient;
-use zot2llm::zotero::models::collection::CollectionResponse;
 
 #[tokio::main]
 async fn main() {
