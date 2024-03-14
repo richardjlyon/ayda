@@ -8,8 +8,8 @@ pub mod commands;
 
 #[derive(Parser)]
 #[clap(
-name = "zot2llm",
-about = "A tool for managing workspaces and documents in zot2llm."
+    name = "zot2llm",
+    about = "A tool for managing workspaces and documents in zot2llm."
 )]
 pub struct Cli {
     #[clap(subcommand)]

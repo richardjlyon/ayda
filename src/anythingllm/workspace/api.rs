@@ -1,7 +1,6 @@
 use serde_json::json;
 
 use crate::anythingllm::client::AnythingLLMClient;
-use crate::anythingllm::documents::Document;
 use crate::anythingllm::error::LLMError;
 use crate::anythingllm::workspace::{
     GetWorkspaceNewResponse, GetWorkspaceSlugResponse, GetWorkspacesResponse, Workspace,
@@ -79,11 +78,10 @@ impl AnythingLLMClient {
     pub async fn post_workspace_slug_update_embeddings(
         &self,
         slug: &str,
-        docs: Vec<Document>,
+        docs: Vec<String>,
         direction: UpdateParameter,
     ) -> Result<(), LLMError> {
         let url = format!("{}/{}/{}", "workspace", slug, "update-embeddings");
-        let docs: Vec<String> = docs.into_iter().filter_map(|d| d.location).collect();
         let json = match direction {
             UpdateParameter::Adds => json!({ "adds": docs }),
             UpdateParameter::Deletes => json!({ "deletes": docs }),

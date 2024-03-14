@@ -27,13 +27,16 @@ impl Item {
     }
 
     pub fn filepath(&self, root: &std::path::Path) -> Option<PathBuf> {
-        self.filename.as_ref().filter(|_| self.is_pdf()).map(|name| root.join(&self.key).join(name))
+        self.filename
+            .as_ref()
+            .filter(|_| self.is_pdf())
+            .map(|name| root.join(&self.key).join(name))
     }
 }
 
 fn deserialize_utc_date<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
-                                where
-                                    D: Deserializer<'de>,
+where
+    D: Deserializer<'de>,
 {
     let date_str = String::deserialize(deserializer)?;
     match DateTime::parse_from_rfc3339(&date_str) {

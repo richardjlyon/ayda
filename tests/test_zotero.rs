@@ -5,7 +5,7 @@ mod tests {
 
     use crate::common::ZoteroFixture;
 
-// // Construction ///////////////////////////////////////////////////////////////////////////////
+    // // Construction ///////////////////////////////////////////////////////////////////////////////
 
     #[tokio::test]
     async fn test_client_new() {
@@ -92,7 +92,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_items_batched() {
         let fixture = ZoteroFixture::new().await;
-        let items_stream = zot2llm::zotero::api::endpoints::items::fetch_items_in_batches(2000, &fixture.client);
+        let items_stream =
+            zot2llm::zotero::api::endpoints::items::fetch_items_in_batches(2000, &fixture.client);
         use futures::StreamExt;
         let data: Vec<_> = items_stream.collect().await;
         println!("{}", data.len());

@@ -27,7 +27,10 @@ impl ZoteroClient {
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<Collection, ZoteroError> {
         let response = self
-            .get_deserialized::<CollectionsResponse>(&format!("collections/{}", collection_key), params)
+            .get_deserialized::<CollectionsResponse>(
+                &format!("collections/{}", collection_key),
+                params,
+            )
             .await?;
         Ok(response.data.clone())
     }

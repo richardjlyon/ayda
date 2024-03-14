@@ -1,6 +1,6 @@
 [package]
 name = "zot2llm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "A tool for loading Zotero documents into a Large Language Model."
 
@@ -24,7 +24,6 @@ uuid = { version = "1.7.0", features = ["v4"] }
 lopdf = { version = "0.32.0", features = ["nom_parser"] }
 tempfile = "3.10.1"
 serde_with = "3.7.0"
-rayon = "1.9.0"
 tokio-stream = "0.1.14"
 futures = "0.3.30"
 tokio-util = { version = "0.7.10", features = ["io"] }

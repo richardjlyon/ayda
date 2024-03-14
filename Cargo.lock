@@ -2087,7 +2087,7 @@ dependencies = [
 
 [[package]]
 name = "zot2llm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "clap",
@@ -2100,7 +2100,6 @@ dependencies = [
  "futures",
  "lopdf",
  "mockito",
- "rayon",
  "regex",
  "reqwest",
  "serde",

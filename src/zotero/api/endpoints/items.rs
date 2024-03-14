@@ -13,7 +13,6 @@ impl ZoteroClient {
         &self,
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<Vec<Item>, ZoteroError> {
-
         // FIXME: items is limited to 100 items by default
 
         // Items returns 25 items by default, so we set the limit to 999 to get all items
@@ -28,7 +27,13 @@ impl ZoteroClient {
         let response = self.get("items", params).await?;
         let headers = response.headers().clone();
         // print total results
-        let total_results: i32 = headers.get("Total-Results").unwrap().to_str().unwrap().parse().unwrap();
+        let total_results: i32 = headers
+            .get("Total-Results")
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .parse()
+            .unwrap();
 
         println!("Total results: {}", total_results);
 
@@ -44,32 +49,8 @@ impl ZoteroClient {
             offset += 100;
         }
 
-        // let items = fetch_items_in_batches(total_results).await?;
-
-        // spawn threads to get all items in batches of 100 items to the total results
-        // let mut items = Vec::new();
-        // let mut offset = 600; //FIXME - revert to 0
-        // while offset < total_results {
-        //     println!("Offset: {}", offset);
-        //     let offset_string = offset.to_string(); // create a new variable for the offset string
-        //     let params = vec![("limit", "100"), ("start", &offset_string)]; // use the new variable here
-        //     let response = self.get("items", Some(params)).await?;
-        //     let items_response = response.json::<Vec<ItemsResponse>>().await?;
-        //     items.extend(items_response.iter().map(|c| c.data.clone()));
-        //     offset += 100;
-        // }
-
         Ok(items)
     }
-
-    // async fn process_batch(offset: usize, limit: usize, client: &Self) -> Result<Vec<ItemsResponse>, ZoteroError> {
-    //     let offset_string = offset.to_string();
-    //     let params = vec![("limit", "100"), ("start", &offset_string)];
-    //     let response = client.get("items", Some(params)).await?;
-    //     let items_response = response.json::<Vec<ItemsResponse>>().await?;
-    //     Ok(items_response.iter().map(|c| c.data.clone()).collect())
-    // }
-
 
     /// GET /items/{itemKey}
     /// A specific item in the library
@@ -92,40 +73,37 @@ impl ZoteroClient {
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<Vec<Item>, ZoteroError> {
         let response = self
-            .get_deserialized::<Vec<ItemsResponse>>(&format!("collections/{}/items", collection_key), params)
+            .get_deserialized::<Vec<ItemsResponse>>(
+                &format!("collections/{}/items", collection_key),
+                params,
+            )
             .await?;
 
         let items = response.iter().map(|c| c.data.clone()).collect();
 
         Ok(items)
-
-        // Ok(res.into_iter().filter(|x| x.is_pdf()).collect())
     }
 }
 
-pub fn fetch_items_in_batches(total_results: i32, client: &ZoteroClient) -> impl futures::stream::Stream<Item=Item> + '_ {
+pub fn fetch_items_in_batches(
+    total_results: i32,
+    client: &ZoteroClient,
+) -> impl futures::stream::Stream<Item=Item> + '_ {
     const CHUNK_SIZE: i32 = 100;
-    let chunks = total_results / CHUNK_SIZE; // TODO: maybe add one
+    let chunks = total_results / CHUNK_SIZE;
 
-    let futs = futures::stream::FuturesUnordered::new();
-    for x in 0..chunks {
-        futs.push(process_batch(x * CHUNK_SIZE, CHUNK_SIZE, client));
-    }
-
-    // 1. vec <- first page to resolve
-    // 2. vec <- 2nd page to resolve
-    // 3. vec
-    let futs = futs.filter_map(|f| async { f.ok() });
-
-    // 1. vec[0][0]
-    // 2. vec[0][1]
-    let futs = futs.flat_map(futures::stream::iter);
-
-    futs
+    futures::stream::iter((0..chunks).map(|x| process_batch(x * CHUNK_SIZE, CHUNK_SIZE, client)))
+        .buffer_unordered(chunks as usize)
+        .filter_map(|f| async { f.ok() })
+        .flat_map(futures::stream::iter)
 }
 
 // fn process_batch(offset: i32, limit: i32, client: &ZoteroClient) -> impl Future<Output = Result<Vec<Item>, ZoteroError>> {
-async fn process_batch(offset: i32, limit: i32, client: &ZoteroClient) -> Result<Vec<Item>, ZoteroError> {
+async fn process_batch(
+    offset: i32,
+    limit: i32,
+    client: &ZoteroClient,
+) -> Result<Vec<Item>, ZoteroError> {
     let limit = limit.to_string();
     let offset = offset.to_string();
     let params = vec![("limit", limit.as_str()), ("start", offset.as_str())];

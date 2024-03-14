@@ -1,10 +1,11 @@
-use std::{env, io};
 use std::io::Write;
 use std::path::PathBuf;
+use std::{env, io};
 
 use colored::*;
 use convert_case::{Case, Casing};
 use dotenv::dotenv;
+use futures::{stream, StreamExt};
 
 use crate::anythingllm::workspace::Workspace;
 use crate::app::commands;
@@ -44,35 +45,71 @@ pub async fn zotero_add() -> Result<(), ZoteroError> {
         return Ok(());
     }
 
+    let pdf_count = pdfs.len();
     let selected_workspace = get_workspace(selected_collection).await?;
     println!(
-        "Adding to workspace: {}",
+        "Adding {} to workspace: {}",
+        pdf_count,
         selected_workspace.name.to_string().green().bold()
     );
 
     dotenv().ok();
     let zotero_library_root_path = &env::var("ZOTERO_LIBRARY_ROOT_PATH")?;
     let zotero_library_root_path = PathBuf::from(zotero_library_root_path);
-    let anythingllm = commands::anythingllm_client();
-    for pdf in pdfs.iter() {
-        let document_filepath = pdf.filepath(&zotero_library_root_path).unwrap();
 
-        let document = match anythingllm.post_document_upload(&document_filepath).await {
-            Ok(doc) => doc,
-            Err(e) => {
-                println!("Other document add error: {} {}", e, document_filepath.to_string_lossy());
-                continue;
+    // share one copy between multiple readers using reference counting
+    let anythingllm = std::sync::Arc::new(commands::anythingllm_client());
+    let failed = std::sync::Arc::new(tokio::sync::Mutex::new(0));
+
+    let docs: Vec<_> = stream::iter(pdfs)
+        .map(|pdf| {
+            let zotero_library_root_path = zotero_library_root_path.clone();
+            let anythingllm = anythingllm.clone();
+            let failed = failed.clone();
+            async move {
+                let document_filepath = pdf.filepath(&zotero_library_root_path).unwrap();
+
+                // Upload PDFs
+                match anythingllm.post_document_upload(&document_filepath).await {
+                    Ok(doc) => {
+                        println!("uploaded {}", doc.id);
+                        doc.location
+                    }
+                    Err(e) => {
+                        println!(
+                            "Other document add error: {} {}",
+                            e,
+                            document_filepath.to_string_lossy()
+                        );
+                        let mut failed = failed.lock().await;
+                        *failed += 1;
+                        None
+                    }
+                }
             }
-        };
+        })
+        .buffer_unordered(100)
+        .filter_map(|f| async { f })
+        .collect()
+        .await;
 
-        // anythingllm
-        //     .workspace_update_embeddings(
-        //         &selected_workspace.slug,
-        //         vec![&document.doc_filepath_internal()],
-        //         UpdateParameter::Adds,
-        //     )
-        //     .await?;
-    }
+    println!(
+        "uploaded {} out of {}",
+        pdf_count - *failed.lock().await,
+        pdf_count
+    );
+
+    // Embed pdfs in workspace
+    anythingllm
+        .post_workspace_slug_update_embeddings(
+            &selected_workspace.slug,
+            docs,
+            UpdateParameter::Adds,
+        )
+        .await
+        .unwrap();
+
+    println!("done");
 
     Ok(())
 }
@@ -120,9 +157,9 @@ async fn get_pdfs(zotero: ZoteroClient, selected_collection: &Collection) -> Vec
             ("linkMode", "imported_file"),
             ("limit", "100"),
         ]
-            .iter()
-            .map(|(k, v)| (*k, *v))
-            .collect(),
+        .iter()
+        .map(|(k, v)| (*k, *v))
+        .collect(),
     );
 
     let items = zotero

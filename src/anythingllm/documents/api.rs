@@ -48,9 +48,11 @@ impl AnythingLLMClient {
             let temp_file_path = NamedTempFile::new()?;
             doc.save(&temp_file_path).unwrap();
             Ok::<_, LLMError>(temp_file_path)
-        }).await.unwrap()?;
+        })
+        .await
+        .unwrap()?;
 
-        let form = Self::create_multipart_form(&temp_file_path, &path).await?;
+        let form = Self::create_multipart_form(&temp_file_path, path).await?;
 
         let response = self.post_multipart("document/upload", form).await?;
         if !response.status().is_success() {
@@ -79,7 +81,10 @@ impl AnythingLLMClient {
     }
 
     // Set the title of a PDF file at 'file_path' to 'new_title'
-    fn set_pdf_meta_title(file_path: &Path, new_title: String) -> Result<lopdf::Document, LLMError> {
+    fn set_pdf_meta_title(
+        file_path: &Path,
+        new_title: String,
+    ) -> Result<lopdf::Document, LLMError> {
         let mut doc = lopdf::Document::load(file_path)?;
 
         for _ in doc.traverse_objects(|x| {
@@ -88,9 +93,9 @@ impl AnythingLLMClient {
                 .ok()
                 .and_then(|d| d.get_mut(b"Title").ok())
                 .map(|o| o.as_str_mut())
-                else {
-                    return;
-                };
+            else {
+                return;
+            };
             // let new_title = "This is a bollocks title";
             title.clear();
             title.extend_from_slice(new_title.as_bytes());
@@ -134,11 +139,10 @@ impl AnythingLLMClient {
     /// e.g. "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf"
     ///   -> "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf"
     fn filename_from_path(name: &Path) -> String {
-        let file_name = name
-            .file_name().unwrap().to_str().unwrap();
+        let file_name = name.file_name().unwrap().to_str().unwrap();
 
         let multi_space = Regex::new(r" +").unwrap();
-        let file_name = multi_space.replace_all(&file_name, " ");
+        let file_name = multi_space.replace_all(file_name, " ");
 
         file_name
             .replace(" - ", "-")
@@ -156,8 +160,9 @@ mod tests {
 
     #[test]
     fn test_filename_from_path() {
-        let filename =
-            PathBuf::from("Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf");
+        let filename = PathBuf::from(
+            "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf",
+        );
         let expected = "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf";
 
         assert_eq!(AnythingLLMClient::filename_from_path(&filename), expected);

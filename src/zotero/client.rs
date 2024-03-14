@@ -31,7 +31,11 @@ impl ZoteroClient {
         }
     }
 
-    pub async fn get(&self, endpoint: &str, params: Option<Vec<(&str, &str)>>) -> Result<reqwest::Response, reqwest::Error> {
+    pub async fn get(
+        &self,
+        endpoint: &str,
+        params: Option<Vec<(&str, &str)>>,
+    ) -> Result<reqwest::Response, reqwest::Error> {
         let url = format!("{}/{}", self.base_url, endpoint);
         dbg!(&url);
         let params = params.unwrap_or_default();
