@@ -1,4 +1,4 @@
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Clone)]
 pub struct Workspace {
     pub id: i32,
     pub name: String,

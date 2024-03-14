@@ -19,20 +19,14 @@ pub struct Item {
     pub date_added: DateTime<Utc>,
 }
 
-impl ItemsResponse {
+impl Item {
     pub fn is_pdf(&self) -> bool {
-        self.data.content_type.as_deref() == Some("application/pdf")
+        self.content_type.as_deref() == Some("application/pdf")
     }
 
     pub fn filepath(&self, root: &str) -> Option<String> {
-        self.is_pdf().then(|| {
-            format!(
-                "{}/{}/{}",
-                root,
-                self.data.key,
-                self.data.filename.as_ref().unwrap()
-            )
-        })
+        self.is_pdf()
+            .then(|| format!("{}/{}/{}", root, self.key, self.filename.as_ref().unwrap()))
     }
 }
 

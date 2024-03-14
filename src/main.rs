@@ -7,6 +7,7 @@ use eyre::Context;
 
 use zot2llm::app::commands::document::*;
 use zot2llm::app::commands::workspace::*;
+use zot2llm::app::commands::zotero::{zotero_add, zotero_list};
 use zot2llm::app::*;
 
 // #[derive(Deserialize, Debug)]
@@ -49,20 +50,18 @@ async fn main() -> eyre::Result<()> {
         } => document_list().await.wrap_err("document_list"),
 
         Document {
-            command:
-                DocumentCmd::Upload {
-                    document_filepath,
-                    workspace_id,
-                },
+            command: DocumentCmd::Upload { document_filepath },
         } => document_upload(&document_filepath)
             .await
             .wrap_err("document_add"),
-        // Zotero {
-        //     command: ZoteroCmd::List,
-        // } => zotero_list().await.wrap_err("zotero_list"),
-        // Zotero {
-        //     command: ZoteroCmd::Add,
-        // } => zotero_add().await.wrap_err("zotero_add"),
+
+        Zotero {
+            command: ZoteroCmd::List,
+        } => zotero_list().await.wrap_err("zotero_list"),
+
+        Zotero {
+            command: ZoteroCmd::Add,
+        } => zotero_add().await.wrap_err("zotero_add"),
     }
     .wrap_err("couldn't execute command")
 }

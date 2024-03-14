@@ -17,6 +17,8 @@ impl AnythingLLMClient {
 
         let documents_response = response.json::<DocumentsResponse>().await?;
 
+        dbg!(&documents_response);
+
         // documents_response is a nested list of folder and document types:
         // extract the documents from the response
         let mut documents: Vec<Document> = Vec::new();
@@ -45,10 +47,12 @@ impl AnythingLLMClient {
         doc.save(&temp_file_path).unwrap();
 
         let form = Self::create_multipart_form(&temp_file_path, file_path)?;
+
         let response = self.post_multipart("document/upload", form).await?;
         if !response.status().is_success() {
             return Err(LLMError::ServiceError(file_path.to_string()));
         }
+
         let document = (&response
             .json::<DocumentMultipartResponse>()
             .await?
@@ -140,7 +144,7 @@ impl AnythingLLMClient {
 }
 
 mod tests {
-    // use super::*;
+    #![allow(unused_imports)]
 
     use crate::anythingllm::client::AnythingLLMClient;
 

@@ -1,12 +1,30 @@
 use serde_json::json;
 
 use crate::anythingllm::client::AnythingLLMClient;
+use crate::anythingllm::documents::Document;
 use crate::anythingllm::error::LLMError;
 use crate::anythingllm::workspace::{
     GetWorkspaceNewResponse, GetWorkspaceSlugResponse, GetWorkspacesResponse, Workspace,
 };
+use crate::app::commands::zotero::UpdateParameter;
 
 impl AnythingLLMClient {
+    /// POST /workspace/new
+    pub async fn post_workspace_new(&self, name: &str) -> Result<Workspace, LLMError> {
+        let response = self
+            .client
+            .post(&format!("{}/{}", self.base_url, "workspace/new"))
+            .header("Content-Type", "application/json")
+            .body(json!({ "name": name }).to_string())
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let workspace_new_response = response.json::<GetWorkspaceNewResponse>().await?;
+
+        Ok(workspace_new_response.workspace)
+    }
+
     /// GET /workspaces
     pub async fn get_workspaces(&self) -> Result<Vec<Workspace>, LLMError> {
         let response = self.get("workspaces").await?.error_for_status()?;
@@ -38,22 +56,6 @@ impl AnythingLLMClient {
         }
     }
 
-    /// POST /workspace/new
-    pub async fn post_workspace_new(&self, name: &str) -> Result<Workspace, LLMError> {
-        let response = self
-            .client
-            .post(&format!("{}/{}", self.base_url, "workspace/new"))
-            .header("Content-Type", "application/json")
-            .body(json!({ "name": name }).to_string())
-            .send()
-            .await?
-            .error_for_status()?;
-
-        let workspace_new_response = response.json::<GetWorkspaceNewResponse>().await?;
-
-        Ok(workspace_new_response.workspace)
-    }
-
     /// DELETE /workspace/{slug}
     pub async fn delete_workspace_slug(&self, slug: &str) -> Result<(), LLMError> {
         let url = format!("{}/{}/{}", self.base_url, "workspace", slug);
@@ -68,6 +70,32 @@ impl AnythingLLMClient {
 
         if response_text == "Bad Request" {
             return Err(LLMError::BadRequest(url));
+        }
+
+        Ok(())
+    }
+
+    /// POST /workspace/{slug}/update-embeddings
+    pub async fn post_workspace_slug_update_embeddings(
+        &self,
+        slug: &str,
+        docs: Vec<Document>,
+        direction: UpdateParameter,
+    ) -> Result<(), LLMError> {
+        let url = format!("{}/{}/{}", "workspace", slug, "update-embeddings");
+        let docs: Vec<String> = docs.into_iter().filter_map(|d| d.location).collect();
+        let json = match direction {
+            UpdateParameter::Adds => json!({ "adds": docs }),
+            UpdateParameter::Deletes => json!({ "deletes": docs }),
+        };
+
+        let response = self
+            .post(&url, &json)
+            .await
+            .map_err(|e| LLMError::ServiceError(e.to_string()))?;
+
+        if !response.status().is_success() {
+            return Err(LLMError::ServiceError(url));
         }
 
         Ok(())

@@ -1,7 +1,6 @@
 //! Document commands
 //!
-//! Document commands
-//!
+
 use colored::*;
 use eyre::Context;
 

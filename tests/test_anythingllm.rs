@@ -5,6 +5,7 @@ mod tests {
 
     use zot2llm::anythingllm::client::AnythingLLMClient;
     use zot2llm::anythingllm::error::LLMError;
+    use zot2llm::app::commands::zotero::UpdateParameter;
 
     use crate::common::AnythingLLMFixture;
 
@@ -131,7 +132,30 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_workspace_slug_update_embeddings() {}
+    async fn test_workspace_slug_update_embeddings() {
+        let fixture = AnythingLLMFixture::new().await;
+        let test_workspace_slug = &fixture.workspace.slug;
+        let test_doc_filepath = "tests/test_data/2022-01-01-Test-Document.pdf";
+
+        let doc = fixture
+            .client
+            .post_document_upload(&test_doc_filepath)
+            .await
+            .unwrap();
+
+        let docs = vec![doc];
+        let _ = fixture
+            .client
+            .post_workspace_slug_update_embeddings(
+                &test_workspace_slug,
+                docs,
+                UpdateParameter::Adds,
+            )
+            .await
+            .unwrap();
+
+        fixture.remove().await;
+    }
 
     // Document tests /////////////////////////////////////////////////////////////////////////////
 

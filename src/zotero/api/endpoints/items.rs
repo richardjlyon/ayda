@@ -37,26 +37,6 @@ impl ZoteroClient {
         collection_key: &str,
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<Vec<Item>, ZoteroError> {
-        // let params = [
-        //     ("itemType", "attachment"),
-        //     ("format", "json"),
-        //     ("linkMode", "imported_file"),
-        //     ("limit", "100"),
-        // ];
-
-        //
-        // let res = self
-        //     .client
-        //     .get(format!(
-        //         "{}/collections/{}/items",
-        //         self.base_url, collection_key
-        //     ))
-        //     .query(&params)
-        //     .send()
-        //     .await?
-        //     .json::<Vec<Item>>()
-        //     .await?;
-
         let response = self
             .get::<Vec<ItemsResponse>>(&format!("collections/{}/items", collection_key), params)
             .await?;
