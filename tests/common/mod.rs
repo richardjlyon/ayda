@@ -25,7 +25,7 @@ impl AnythingLLMFixture {
         Self { client, workspace }
     }
 
-    pub async fn remove(self) {
+    pub async fn remove(&self) {
         let _ = &self
             .client
             .delete_workspace_slug(&self.workspace.slug)
@@ -34,7 +34,7 @@ impl AnythingLLMFixture {
 }
 
 pub struct ZoteroFixture {
-    pub client: zot2llm::zotero::client::ZoteroClient,
+    pub client: ZoteroClient,
 }
 
 impl ZoteroFixture {

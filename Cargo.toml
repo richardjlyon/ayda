@@ -6,7 +6,7 @@ description = "A tool for loading Zotero documents into a Large Language Model."
 
 [dependencies]
 dotenv = "0.15.0"
-reqwest = { version = "0.11.24", features = ["json", "multipart"] }
+reqwest = { version = "0.11.24", features = ["json", "multipart", "stream"] }
 serde = { version = "1.0.197", features = ["derive"] }
 eyre = "0.6.12"
 color-eyre = "0.6.2"
@@ -24,4 +24,8 @@ uuid = { version = "1.7.0", features = ["v4"] }
 lopdf = { version = "0.32.0", features = ["nom_parser"] }
 tempfile = "3.10.1"
 serde_with = "3.7.0"
+rayon = "1.9.0"
+tokio-stream = "0.1.14"
+futures = "0.3.30"
+tokio-util = { version = "0.7.10", features = ["io"] }
 

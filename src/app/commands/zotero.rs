@@ -1,5 +1,6 @@
-use std::io::Write;
 use std::{env, io};
+use std::io::Write;
+use std::path::PathBuf;
 
 use colored::*;
 use convert_case::{Case, Casing};
@@ -51,14 +52,15 @@ pub async fn zotero_add() -> Result<(), ZoteroError> {
 
     dotenv().ok();
     let zotero_library_root_path = &env::var("ZOTERO_LIBRARY_ROOT_PATH")?;
+    let zotero_library_root_path = PathBuf::from(zotero_library_root_path);
     let anythingllm = commands::anythingllm_client();
     for pdf in pdfs.iter() {
-        let document_filepath = pdf.filepath(zotero_library_root_path).unwrap();
+        let document_filepath = pdf.filepath(&zotero_library_root_path).unwrap();
 
         let document = match anythingllm.post_document_upload(&document_filepath).await {
             Ok(doc) => doc,
             Err(e) => {
-                println!("Other document add error: {} {}", e, document_filepath);
+                println!("Other document add error: {} {}", e, document_filepath.to_string_lossy());
                 continue;
             }
         };
@@ -118,9 +120,9 @@ async fn get_pdfs(zotero: ZoteroClient, selected_collection: &Collection) -> Vec
             ("linkMode", "imported_file"),
             ("limit", "100"),
         ]
-        .iter()
-        .map(|(k, v)| (*k, *v))
-        .collect(),
+            .iter()
+            .map(|(k, v)| (*k, *v))
+            .collect(),
     );
 
     let items = zotero

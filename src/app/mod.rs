@@ -1,13 +1,15 @@
 //! A command line application.
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 pub mod commands;
 
 #[derive(Parser)]
 #[clap(
-    name = "zot2llm",
-    about = "A tool for managing workspaces and documents in zot2llm."
+name = "zot2llm",
+about = "A tool for managing workspaces and documents in zot2llm."
 )]
 pub struct Cli {
     #[clap(subcommand)]
@@ -59,7 +61,7 @@ pub enum DocumentCmd {
     /// Add a new document
     Upload {
         /// File path of the document
-        document_filepath: String,
+        document_filepath: PathBuf,
     },
 }
 

@@ -12,7 +12,7 @@ impl ZoteroClient {
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<Vec<Collection>, ZoteroError> {
         let response = self
-            .get::<Vec<CollectionsResponse>>("collections", params)
+            .get_deserialized::<Vec<CollectionsResponse>>("collections", params)
             .await?;
         let collections: Vec<Collection> = response.iter().map(|c| c.data.clone()).collect();
 
@@ -27,7 +27,7 @@ impl ZoteroClient {
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<Collection, ZoteroError> {
         let response = self
-            .get::<CollectionsResponse>(&format!("collections/{}", collection_key), params)
+            .get_deserialized::<CollectionsResponse>(&format!("collections/{}", collection_key), params)
             .await?;
         Ok(response.data.clone())
     }

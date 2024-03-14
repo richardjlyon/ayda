@@ -5,7 +5,7 @@ mod tests {
 
     use crate::common::ZoteroFixture;
 
-    // // Construction ///////////////////////////////////////////////////////////////////////////////
+// // Construction ///////////////////////////////////////////////////////////////////////////////
 
     #[tokio::test]
     async fn test_client_new() {
@@ -61,7 +61,6 @@ mod tests {
             ("itemType", "attachment"),
             ("format", "json"),
             ("linkMode", "imported_file"),
-            ("limit", "100"),
         ];
         let params = Some(params_array.iter().map(|(k, v)| (*k, *v)).collect());
         let items = fixture
@@ -87,7 +86,16 @@ mod tests {
         let items = fixture.client.get_items(None).await.unwrap();
         assert!(items.len() > 0);
 
-        dbg!(items);
+        dbg!(items.len());
+    }
+
+    #[tokio::test]
+    async fn test_get_items_batched() {
+        let fixture = ZoteroFixture::new().await;
+        let items_stream = zot2llm::zotero::api::endpoints::items::fetch_items_in_batches(2000, &fixture.client);
+        use futures::StreamExt;
+        let data: Vec<_> = items_stream.collect().await;
+        println!("{}", data.len());
     }
 
     #[tokio::test]

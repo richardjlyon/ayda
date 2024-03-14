@@ -2,6 +2,7 @@ mod common;
 
 mod tests {
     use std::env;
+    use std::path::PathBuf;
 
     use zot2llm::anythingllm::client::AnythingLLMClient;
     use zot2llm::anythingllm::error::LLMError;
@@ -9,7 +10,7 @@ mod tests {
 
     use crate::common::AnythingLLMFixture;
 
-    //  // Construction ///////////////////////////////////////////////////////////////////////////////
+//  // Construction ///////////////////////////////////////////////////////////////////////////////
 
     #[tokio::test]
     async fn test_client_new() {
@@ -59,13 +60,12 @@ mod tests {
         let fixture = AnythingLLMFixture::new().await;
         let workspaces = fixture.client.get_workspaces().await.unwrap();
         let workspace_slug = &fixture.workspace.slug;
+        fixture.remove().await;
 
         assert!(workspaces.len() > 0);
         assert!(workspaces
             .iter()
             .any(|w| w.slug == workspace_slug.to_string()));
-
-        fixture.remove().await;
     }
 
     #[tokio::test]
@@ -77,10 +77,9 @@ mod tests {
             .get_workspace_slug(&test_workspace_slug)
             .await
             .unwrap();
+        fixture.remove().await;
 
         assert_eq!(workspace.slug, test_workspace_slug.to_string());
-
-        fixture.remove().await;
     }
 
     #[tokio::test]
@@ -90,10 +89,9 @@ mod tests {
             .client
             .get_workspace_slug("invalid-workspace-slug")
             .await;
+        fixture.remove().await;
 
         println!("{:?}", workspace);
-
-        fixture.remove().await;
     }
 
     #[tokio::test]
@@ -110,6 +108,8 @@ mod tests {
         assert!(!workspaces
             .iter()
             .any(|w| w.slug == test_workspace_slug.to_string()));
+
+        fixture.remove().await;
     }
 
     #[tokio::test]
@@ -119,6 +119,8 @@ mod tests {
             .client
             .delete_workspace_slug("invalid-workspace-slug")
             .await;
+        fixture.client.get_workspaces().await.unwrap();
+        fixture.remove().await;
 
         match response {
             Ok(_) => panic!("Expected an error, but got Ok(_)"),
@@ -127,15 +129,14 @@ mod tests {
                 _ => panic!("Expected LLMError::BadRequest, but got a different error"),
             },
         }
-
-        fixture.client.get_workspaces().await.unwrap();
     }
 
     #[tokio::test]
+    #[ignore] // NOTE: This test is ignored because it requires a valid document to be uploaded
     async fn test_workspace_slug_update_embeddings() {
         let fixture = AnythingLLMFixture::new().await;
         let test_workspace_slug = &fixture.workspace.slug;
-        let test_doc_filepath = "tests/test_data/2022-01-01-Test-Document.pdf";
+        let test_doc_filepath = PathBuf::from("tests/test_data/DELETE ME test document.pdf");
 
         let doc = fixture
             .client
@@ -160,19 +161,26 @@ mod tests {
     // Document tests /////////////////////////////////////////////////////////////////////////////
 
     #[tokio::test]
+    #[ignore] // NOTE: This test is ignored because it requires a valid document to be uploaded
     async fn test_get_documents() {
         let fixture = AnythingLLMFixture::new().await;
+        let test_doc_filepath = PathBuf::from("tests/test_data/DELETE ME test document.pdf");
+        let doc = fixture
+            .client
+            .post_document_upload(&test_doc_filepath)
+            .await
+            .unwrap();
+        fixture.remove().await;
 
         let docs = fixture.client.get_documents().await.unwrap();
         assert!(docs.len() > 0);
-
-        fixture.remove().await;
     }
 
     #[tokio::test]
+    #[ignore] // NOTE: This test is ignored because it requires a valid document to be uploaded
     async fn test_post_document_upload() {
         let fixture = AnythingLLMFixture::new().await;
-        let file_path = "tests/test_data/2022-01-01-Test-Document.pdf";
+        let file_path = PathBuf::from("tests/test_data/DELETE ME test document.pdf");
         let doc = fixture
             .client
             .post_document_upload(&file_path)
@@ -180,21 +188,13 @@ mod tests {
             .unwrap();
 
         // confirm the document is in the workspace
+        // TODO: implement this (there isn't a puvlic API endpoint for this yet)
 
         fixture.remove().await;
     }
 
     #[tokio::test]
-    async fn test_post_document_upload_invalid() {
-        // let fixture = Fixture::new().await;
-        //
-        // // upload a test document
-        // let doc = fixture.client.post_document_upload().await.unwrap();
-        // // confirm the document is in the workspace
-        // // delete the workspace
-        //
-        // fixture.remove().await;
-    }
+    async fn test_post_document_upload_invalid() {}
 
     #[tokio::test]
     async fn test_get_document_docname() {}

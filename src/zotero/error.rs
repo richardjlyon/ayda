@@ -18,6 +18,8 @@ pub enum ZoteroError {
     InvalidInput(u8),
     #[error("PDF path error error: {0}")]
     PDFPathError(String),
+    #[error("Deserialisation error")]
+    DeserializationError,
 }
 
 impl From<reqwest::Error> for ZoteroError {

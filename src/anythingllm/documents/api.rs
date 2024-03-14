@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 
 use regex::Regex;
@@ -32,8 +31,8 @@ impl AnythingLLMClient {
     }
 
     /// POST /document/upload
-    pub async fn post_document_upload(&self, file_path: &str) -> Result<Document, LLMError> {
-        let path = std::path::Path::new(file_path);
+    /// TODO: make file_path an actual PATH in signature
+    pub async fn post_document_upload(&self, path: &Path) -> Result<Document, LLMError> {
         if !path.exists() {
             return Err(LLMError::FileSystemError(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -41,16 +40,21 @@ impl AnythingLLMClient {
             )));
         }
 
-        let new_title = Self::make_pdf_meta_title(path);
-        let mut doc = Self::set_pdf_meta_title(file_path, new_title)?;
-        let temp_file_path = NamedTempFile::new()?;
-        doc.save(&temp_file_path).unwrap();
+        // move sync work to blocking thread
+        let path_owned = path.to_owned();
+        let temp_file_path = tokio::task::spawn_blocking(move || {
+            let new_title = Self::make_pdf_meta_title(&path_owned);
+            let mut doc = Self::set_pdf_meta_title(&path_owned, new_title)?;
+            let temp_file_path = NamedTempFile::new()?;
+            doc.save(&temp_file_path).unwrap();
+            Ok::<_, LLMError>(temp_file_path)
+        }).await.unwrap()?;
 
-        let form = Self::create_multipart_form(&temp_file_path, file_path)?;
+        let form = Self::create_multipart_form(&temp_file_path, &path).await?;
 
         let response = self.post_multipart("document/upload", form).await?;
         if !response.status().is_success() {
-            return Err(LLMError::ServiceError(file_path.to_string()));
+            return Err(LLMError::ServiceError(path.to_string_lossy().to_string()));
         }
 
         let document = (&response
@@ -75,7 +79,7 @@ impl AnythingLLMClient {
     }
 
     // Set the title of a PDF file at 'file_path' to 'new_title'
-    fn set_pdf_meta_title(file_path: &str, new_title: String) -> Result<lopdf::Document, LLMError> {
+    fn set_pdf_meta_title(file_path: &Path, new_title: String) -> Result<lopdf::Document, LLMError> {
         let mut doc = lopdf::Document::load(file_path)?;
 
         for _ in doc.traverse_objects(|x| {
@@ -84,9 +88,9 @@ impl AnythingLLMClient {
                 .ok()
                 .and_then(|d| d.get_mut(b"Title").ok())
                 .map(|o| o.as_str_mut())
-            else {
-                return;
-            };
+                else {
+                    return;
+                };
             // let new_title = "This is a bollocks title";
             title.clear();
             title.extend_from_slice(new_title.as_bytes());
@@ -95,13 +99,17 @@ impl AnythingLLMClient {
     }
 
     // Create a multipart form with a PDF file
-    fn create_multipart_form(
+    async fn create_multipart_form(
         temp_file_path: &NamedTempFile,
-        file_path: &str,
+        file_path: &Path,
     ) -> Result<Form, LLMError> {
         let file_name = Self::filename_from_path(file_path);
-        let pdf_bytes = fs::read(temp_file_path)?;
-        let pdf_part = multipart::Part::bytes(pdf_bytes)
+
+        let pdf_file = tokio::fs::File::open(temp_file_path).await?;
+        let len = pdf_file.metadata().await.unwrap().len();
+        let stream = tokio_util::io::ReaderStream::new(pdf_file); // convert AsyncRead to Stream
+
+        let pdf_part = multipart::Part::stream_with_length(reqwest::Body::wrap_stream(stream), len)
             .file_name(file_name.clone())
             .mime_str("application/pdf")?;
         let form = multipart::Form::new().part("file", pdf_part);
@@ -122,16 +130,12 @@ impl AnythingLLMClient {
         }
     }
 
-    // Wrangle the file name into the internal format used by AnythingLLM
-    // e.g. "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf"
-    //   -> "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf"
-    fn filename_from_path(name: &str) -> String {
-        let path = std::path::Path::new(name);
-        let file_name = path
-            .file_name()
-            .and_then(std::ffi::OsStr::to_str)
-            .map(|s| s.to_string())
-            .unwrap();
+    /// Wrangle the file name into the internal format used by AnythingLLM
+    /// e.g. "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf"
+    ///   -> "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf"
+    fn filename_from_path(name: &Path) -> String {
+        let file_name = name
+            .file_name().unwrap().to_str().unwrap();
 
         let multi_space = Regex::new(r" +").unwrap();
         let file_name = multi_space.replace_all(&file_name, " ");
@@ -146,14 +150,16 @@ impl AnythingLLMClient {
 mod tests {
     #![allow(unused_imports)]
 
+    use std::path::PathBuf;
+
     use crate::anythingllm::client::AnythingLLMClient;
 
     #[test]
     fn test_filename_from_path() {
         let filename =
-            "Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf";
+            PathBuf::from("Skrable et al. - 2022 - World Atmospheric CO2, Its 14C Specific Activity, .pdf");
         let expected = "Skrable-et-al.-2022-World-Atmospheric-CO2-Its-14C-Specific-Activity-.pdf";
 
-        assert_eq!(AnythingLLMClient::filename_from_path(filename), expected);
+        assert_eq!(AnythingLLMClient::filename_from_path(&filename), expected);
     }
 }
