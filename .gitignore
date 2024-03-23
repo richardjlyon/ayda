@@ -4,3 +4,5 @@
 task-list.taskpaper
 
 .DS_Store
+
+old.env

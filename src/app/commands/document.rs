@@ -1,49 +1,27 @@
 //! Document commands
 //!
-use colored::*;
 
-use crate::anythingllm::api::workspaces::UpdateParameter;
+use colored::*;
+use eyre::Context;
+
 use crate::app::commands;
-use crate::app::error::AppError;
 
 /// List all documents in a workspace
-pub async fn document_list() -> Result<(), AppError> {
+///
+pub async fn list() -> eyre::Result<()> {
     let client = commands::anythingllm_client();
-    let documents = client.document_list().await?;
-
-    println!("{}", "Listing all documents".green());
-    // enumerate the documents and generate an index
-
-    for (idx, doc) in documents.iter().enumerate() {
-        println!("DEBUG: document: {:#?}", doc);
-        println!("{:>2}: {}", idx + 1, doc.title);
-    }
-
-    Ok(())
-}
-
-/// Add a document to a workspace
-pub async fn document_add(document_filepath: &str, workspace_id: u8) -> Result<(), AppError> {
-    let client = commands::anythingllm_client();
-    let document = client
-        .document_add(document_filepath)
+    let documents = client
+        .get_documents()
         .await
-        .expect("FIXME Failed to add document");
-    let workspace_slug = client.workspace_slug_from_id(workspace_id).await?;
+        .wrap_err("could get documents")?;
 
-    client
-        .workspace_update_embeddings(
-            &workspace_slug,
-            vec![&document.doc_filepath_internal()],
-            UpdateParameter::Adds,
-        )
-        .await?;
-
-    println!(
-        "{} {}",
-        "Document added to workspace".green(),
-        workspace_slug.to_string().green().bold()
-    );
+    for doc in documents {
+        if let Some(title) = doc.title.clone() {
+            println!("- {}", title);
+        } else {
+            println!("- {}", "Untitled".red());
+        }
+    }
 
     Ok(())
 }

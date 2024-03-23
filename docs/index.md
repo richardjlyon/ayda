@@ -1,5 +1,3 @@
-# Ask your Documents Anything
-
 Wouldn't it be handy if you could interrogate your documents as though ChatGPT were your personal research assistant?
 
 **Now you can.**
@@ -42,6 +40,7 @@ climate oscillations, specifically changes in Earth’s orbital parameters and
 axial tilt.
 ```
 
-## Documentation
+## Links
 
-For documentation on how to use the `ayda` command line application, see the [documentation](https://richardjlyon.github.io/ayda/).
+- [Github - https://github.com/richardjlyon/ayda](https://github.com/richardjlyon/ayda)
+- [crates.io - ayda](https://crates.io/crates/ayda)
