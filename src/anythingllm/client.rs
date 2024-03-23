@@ -1,171 +1,133 @@
-use std::fs;
+//! Anythingllm client module.
+//!
+//! ## Example usage:
+//!
+//! ```rust
+//! use anythingllm::client::AnythingLLMClient;
+//!
+//! #[tokio::main]
+//! async fn main() {
+//!     let client = AnythingLLMClient::new("127.0.0.1", "8080", "api_key");
+//!     let response = client.get_auth().await.unwrap();
+//!     assert_eq!(client.base_url_api_v1, "http://127.0.0.1:8080/api/v1");
+//! }
+//! ```
+//!
 
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::{multipart, Client, StatusCode};
-use serde::de::DeserializeOwned;
-use serde_json::{json, Value};
+use reqwest::multipart::Form;
+use reqwest::Response;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-/// The `AnythingLLMClient` struct represents a client for the AnythingLLM API.
-/// It includes the base URL for the API and a `reqwest::Client` for making requests.
 use crate::anythingllm::error::LLMError;
-use crate::anythingllm::models::document::DocumentUploadResponse;
-use crate::anythingllm::models::workspace::{WorkspaceData, WorkspaceNewResponse};
 
+#[derive(Serialize, Deserialize)]
+struct AuthResponse {
+    authenticated: bool,
+}
+
+/// An AnythingLLM client.
+#[derive(Debug, Clone)]
 pub struct AnythingLLMClient {
     pub base_url: String,
+    pub base_url_api_v1: String,
     pub client: reqwest::Client,
 }
 
 impl AnythingLLMClient {
-    pub fn new(server_ip: &str, port: &str, api_key: &str) -> Self {
+    pub fn new(ip: &str, port: &str, api_key: &str) -> Self {
         let mut headers = HeaderMap::new();
         headers.insert(
             "Authorization",
             HeaderValue::from_str(&format!("Bearer {}", api_key)).unwrap(),
         );
-
-        Self {
-            base_url: format!("http://{}:{}/api/v1", server_ip, port),
-            client: Client::builder().default_headers(headers).build().unwrap(),
-        }
-    }
-
-    pub async fn get<T: DeserializeOwned>(&self, endpoint: &str) -> Result<T, LLMError> {
-        let response = self
-            .client
-            .get(format!("{}/{}", self.base_url, endpoint))
-            .send()
-            .await?;
-
-        match response.status() {
-            StatusCode::FORBIDDEN => Err(LLMError::AuthFail("Unauthorized".to_string())),
-            StatusCode::INTERNAL_SERVER_ERROR => {
-                Err(LLMError::ServiceError("Internal Server Error".to_string()))
-            }
-            _ => response
-                .json::<T>()
-                .await
-                .map_err(|e| LLMError::ServiceError(e.to_string())),
-        }
-    }
-
-    pub async fn delete(&self, endpoint: &str, slug: &str) -> Result<(), LLMError> {
-        let url = format!("{}/{}/{}", self.base_url, endpoint, slug);
-        let response = self.client.delete(&url).send().await?;
-
-        match response.status() {
-            StatusCode::OK => Ok(()),
-            e => Err(LLMError::ServiceError(e.to_string())),
-        }
-    }
-
-    pub async fn post_name(&self, endpoint: &str, name: &str) -> Result<WorkspaceData, LLMError> {
-        let response = self
-            .client
-            .post(&format!("{}/{}", self.base_url, endpoint))
-            .header("Content-Type", "application/json")
-            .body(json!({ "name": name }).to_string())
-            .send()
-            .await?;
-
-        response
-            .json::<WorkspaceNewResponse>()
-            .await
-            .map(|data| data.workspace)
-            .map_err(|e| LLMError::ServiceError(e.to_string()))
-    }
-
-    pub async fn post_multipart(
-        &self,
-        endpoint: &str,
-        form: multipart::Form,
-    ) -> Result<DocumentUploadResponse, LLMError> {
-        let response = self
-            .client
-            .post(&format!("{}/{}", self.base_url, endpoint))
-            .multipart(form)
-            .send()
-            .await
+        let base_url = format!("http://{}:{}", ip, port);
+        let base_url_api_v1 = format!("http://{}:{}/api/v1", ip, port);
+        let client = reqwest::Client::builder()
+            .default_headers(headers)
+            .build()
             .unwrap();
 
-        if response.status() != StatusCode::OK {
-            return Err(LLMError::ServiceError(response.status().to_string()));
-        }
-
-        let document_response: DocumentUploadResponse = response.json().await?;
-        Ok(document_response)
-    }
-
-    pub async fn post_json(
-        &self,
-        endpoint: &str,
-        json_body: serde_json::Value,
-    ) -> Result<(), LLMError> {
-        let url = format!("{}/{}", self.base_url, endpoint);
-        let response = self.client.post(&url).json(&json_body).send().await?;
-
-        match response.status() {
-            StatusCode::OK => Ok(()),
-            e => Err(LLMError::ServiceError(e.to_string())),
+        Self {
+            base_url,
+            base_url_api_v1,
+            client,
         }
     }
 
-    // TEST
-
-    pub async fn post_json_raw(
-        &self,
-        endpoint: &str,
-        json_body: serde_json::Value,
-    ) -> Result<(), LLMError> {
+    // FIXME improve error handling to relay the error message
+    pub async fn get(&self, endpoint: &str) -> Result<Response, LLMError> {
+        let url = format!("{}/{}", self.base_url_api_v1, endpoint);
         let response = self
             .client
-            .post(&format!("{}/{}", self.base_url, endpoint))
-            .json(&json_body)
+            .get(url.clone())
             .send()
-            .await?;
+            .await?
+            .error_for_status()?;
 
-        let data = response.text().await?;
-        let json: Value = serde_json::from_str(&data).unwrap();
-        let pretty_json = serde_json::to_string_pretty(&json).unwrap();
-        fs::write("document_upload.json", &pretty_json).expect("Unable to write file");
-
-        Ok(())
+        Ok(response)
     }
 
-    // END TEST
-}
+    pub async fn post(&self, endpoint: &str, body: &Value) -> Result<Response, LLMError> {
+        let url = format!("{}/{}", self.base_url_api_v1, endpoint);
+        let response = self
+            .client
+            .post(url.clone())
+            .header("Content-Type", "application/json")
+            .body(body.to_string())
+            .send()
+            .await?
+            .error_for_status()?;
 
-#[cfg(test)]
-mod tests {
-    use std::env;
-
-    use dotenv::dotenv;
-
-    use crate::anythingllm::models::workspace::WorkspacesResponse;
-
-    use super::*;
-
-    #[test]
-    fn new() {
-        let a = AnythingLLMClient::new("10.13.10.8", "3001", "api_key");
-        assert_eq!(a.base_url, "http://10.13.10.8:3001/api/v1");
+        Ok(response)
     }
 
-    #[tokio::test]
-    async fn test_auth_fail() {
-        dotenv().ok();
-        let client = AnythingLLMClient::new(
-            &env::var("ANYTHINGLLM_IP").expect("IP not found"),
-            &env::var("ANYTHINGLLM_PORT").expect("port not found"),
-            "invalid_api_key",
-        );
+    pub async fn delete(&self, endpoint: &str, body: &Value) -> Result<Response, LLMError> {
+        let url = format!("{}/{}", self.base_url, endpoint);
 
-        match client.get::<WorkspacesResponse>("workspaces").await {
-            Ok(_) => panic!("Expected an error, but got a successful response"),
-            Err(err) => match err {
-                LLMError::AuthFail(_) => (), // Test passes if we get here
-                _ => panic!("Expected AuthFail, but got a different error"),
-            },
+        let response = self
+            .client
+            .delete(url.clone())
+            .header("Content-Type", "application/json")
+            .header("Content-Length", body.to_string().len())
+            .body(body.to_string())
+            .send()
+            .await?
+            .error_for_status()?;
+
+        Ok(response)
+    }
+
+    /// Get the authentication status from the AnythingLLM instance.
+    pub async fn get_auth(&self) -> std::result::Result<bool, LLMError> {
+        let response = match self.get("auth").await {
+            Ok(response) => response,
+            Err(_) => return Err(LLMError::AuthError),
+        };
+
+        let result = response
+            .json::<AuthResponse>()
+            .await
+            .expect("FIXME failed to parse json");
+
+        match result.authenticated {
+            true => Ok(true),
+            false => Err(LLMError::AuthError),
         }
+    }
+
+    pub async fn post_multipart(&self, endpoint: &str, form: Form) -> Result<Response, LLMError> {
+        let url = format!("{}/{}", self.base_url_api_v1, endpoint);
+
+        let response = self
+            .client
+            .post(url.clone())
+            .multipart(form)
+            .send()
+            .await?
+            .error_for_status()?;
+
+        Ok(response)
     }
 }

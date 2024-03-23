@@ -1,63 +1,116 @@
+//! aza
+//!
+//!
+//!
+use std::path::PathBuf;
+
+use ayda::anythingllm::ChatMode;
 use clap::Parser;
+use color_eyre::owo_colors::OwoColorize;
 use eyre::Context;
+use tokio::select;
+use tracing::Level;
+use tracing_subscriber::FmtSubscriber;
 
-use zot2llm::app::commands::document::{document_add, document_list};
-use zot2llm::app::commands::workspace::{workspace_create, workspace_delete, workspace_list};
-use zot2llm::app::commands::zotero::{zotero_add, zotero_list};
-use zot2llm::app::*;
-
-// #[derive(Deserialize, Debug)]
-// struct Config {
-//     zotero_user_id: String,
-//     anythingllm_api_key: String,
-// }
+use ayda::app::{commands::admin, commands::workspace, Commands::*};
+use ayda::app::{Cli, SourceType};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
+    let (non_blocking_stdio, _guard) = tracing_appender::non_blocking(std::io::stdout());
+
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::ERROR)
+        .with_writer(non_blocking_stdio)
+        .compact()
+        .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+
+    let config_path = ayda::Config::check_config()?;
     color_eyre::install()?;
+
     let cli = Cli::parse();
 
-    // let dirs = directories_next::ProjectDirs::from("com", "richard", "zot2llm").unwrap();
-    // let config_path = dirs.config_dir().join("config.json");
-    // let file = std::fs::File::open(config_path).wrap_err("could not open config file")?;
-    // let data: Config = serde_json::from_reader(file).wrap_err("config file invalid")?;
-    // println!("{:?}", data);
+    select! {
+        _ = command(config_path, cli) => {},
+        _ = tokio::signal::ctrl_c() => {
+            tracing::info!("detected interrupt, exiting");
+        },
+    }
 
-    use Commands::*;
+    Ok(())
+}
+
+#[tracing::instrument(skip(config_path, cli))]
+async fn command(config_path: PathBuf, cli: Cli) -> eyre::Result<()> {
     match cli.command {
-        Workspace {
-            command: WorkspaceCmd::List,
-        } => workspace_list().await.wrap_err("unable to list workspace"),
-        Workspace {
-            command: WorkspaceCmd::Create { workspace_name },
-        } => workspace_create(&workspace_name)
+        Create { workspace_name } => workspace::create::create(workspace_name)
             .await
-            .wrap_err("workspace_create"),
-        Workspace {
-            command: WorkspaceCmd::Delete { workspace_id },
-        } => workspace_delete(workspace_id)
-            .await
-            .wrap_err("workspace_delete"),
+            .wrap_err("unable to create workspace"),
 
-        Document {
-            command: DocumentCmd::List,
-        } => document_list().await.wrap_err("document_list"),
-        Document {
-            command:
-                DocumentCmd::Add {
-                    document_filepath,
-                    workspace_id,
-                },
-        } => document_add(&document_filepath, workspace_id)
-            .await
-            .wrap_err("document_add"),
+        List {} => workspace::list().await.wrap_err("unable to list workspace"),
 
-        Zotero {
-            command: ZoteroCmd::List,
-        } => zotero_list().await.wrap_err("zotero_list"),
-        Zotero {
-            command: ZoteroCmd::Add,
-        } => zotero_add().await.wrap_err("zotero_add"),
+        Delete {
+            workspace_name: Some(name),
+            all: false,
+        } => {
+            // Delete a specific workspace
+            match workspace::delete(name).await {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    println!("{}", e.to_string().red());
+                    Err(e.into())
+                }
+            }
+        }
+
+        Delete {
+            workspace_name: None,
+            all: true,
+        } => {
+            // Delete all workspaces
+            match workspace::delete_all().await {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    println!("{}", e.to_string().red());
+                    Err(e.into())
+                }
+            }
+        }
+
+        Import {
+            source_type,
+            source_name,
+        } => match source_type {
+            SourceType::Zotero {} => workspace::import_zotero(source_name)
+                .await
+                .wrap_err("unable to import zotero collection"),
+            SourceType::Folder {} => workspace::import_folder(PathBuf::from(source_name))
+                .await
+                .wrap_err("unable to import file"),
+            SourceType::Item {} => workspace::import_item(source_name)
+                .await
+                .wrap_err("unable to import item"),
+        },
+
+        Chat { workspace_name } => workspace::chat(workspace_name, ChatMode::Chat)
+            .await
+            .wrap_err("unable to chat with workspace"),
+
+        Query { workspace_name } => workspace::chat(workspace_name, ChatMode::Query)
+            .await
+            .wrap_err("unable to query workspace"),
+
+        Config {} => admin::configure(&config_path)
+            .wrap_err("unable to configure application"),
+
+        _ => {
+            println!(
+                "Invalid combination of arguments. Please consult the documentation for available commands"
+            );
+            Ok(())
+        }
     }
     .wrap_err("couldn't execute command")
 }

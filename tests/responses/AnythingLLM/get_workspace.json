@@ -1,0 +1,30 @@
+{
+  "workspace": {
+    "id": 601,
+    "name": "DELETE ME 944b4233-bb42-4007-8009-a0227f007b1b",
+    "slug": "delete-me-944b4233-bb42-4007-8009-a0227f007b1b",
+    "vectorTag": null,
+    "createdAt": "2024-03-21T08:55:05.493Z",
+    "openAiTemp": null,
+    "openAiHistory": 20,
+    "lastUpdatedAt": "2024-03-21T08:55:05.493Z",
+    "openAiPrompt": null,
+    "similarityThreshold": 0.25,
+    "chatModel": null,
+    "topN": 4,
+    "chatMode": "chat",
+    "documents": [
+      {
+        "id": 1885,
+        "docId": "8050e9eb-d757-48f2-a476-bfe976f6517b",
+        "filename": "DELETE-ME-test-document.pdf-657b4057-bfb5-4ee3-8399-1f74d59b86f1.json",
+        "docpath": "custom-documents/DELETE-ME-test-document.pdf-657b4057-bfb5-4ee3-8399-1f74d59b86f1.json",
+        "workspaceId": 601,
+        "metadata": "{\"id\":\"657b4057-bfb5-4ee3-8399-1f74d59b86f1\",\"url\":\"file:///app/collector/hotdir/DELETE-ME-test-document.pdf\",\"title\":\"DELETE ME test document.pdf\",\"docAuthor\":\"Springer\",\"description\":\"No description found.\",\"docSource\":\"pdf file uploaded by the user.\",\"chunkSource\":\"\",\"published\":\"3/21/2024, 8:55:05 AM\",\"wordCount\":8259,\"token_count_estimate\":13442}",
+        "pinned": false,
+        "createdAt": "2024-03-21T08:55:07.431Z",
+        "lastUpdatedAt": "2024-03-21T08:55:07.431Z"
+      }
+    ]
+  }
+}

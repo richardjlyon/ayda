@@ -1,12 +1,23 @@
 [package]
-name = "zot2llm"
-version = "0.1.0"
+name = "ayda"
+version = "1.0.1"
 edition = "2021"
-description = "A tool for loading Zotero documents into a Large Language Model."
+authors = ["Richard Lyon <richlyon@fastmail.com>"]
+license = "MIT"
+description = "Ask your Documents Anything. A tool for querying your documents with a large language model."
+readme = "README.md"
+homepage = "https://richardjlyon.github.io/ayda/"
+repository = "https://github.com/richardjlyon/ayda"
+keywords = ["openai", "cli", "pdf", "academic", "search"]
+categories = [
+    "development-tools::cli",
+    "text-processing::indexing",
+    "text-processing::search",
+]
+
 
 [dependencies]
-dotenv = "0.15.0"
-reqwest = { version = "0.11.24", features = ["json", "multipart"] }
+reqwest = { version = "0.11.24", features = ["json", "multipart", "stream"] }
 serde = { version = "1.0.197", features = ["derive"] }
 eyre = "0.6.12"
 color-eyre = "0.6.2"
@@ -15,9 +26,29 @@ serde_json = "1.0.114"
 regex = "1.10.3"
 thiserror = "1.0.57"
 clap = { version = "4.5.2", features = ["derive"] }
-chrono = "0.4.35"
+chrono = { version = "0.4.35", features = ["serde"] }
 colored = "2.1.0"
 mockito = "1.4.0"
 directories-next = "2.0.0"
 convert_case = "0.6.0"
+uuid = { version = "1.7.0", features = ["v4"] }
+lopdf = { version = "0.32.0", features = ["nom_parser"] }
+tempfile = "3.10.1"
+serde_with = "3.7.0"
+tokio-stream = "0.1.14"
+futures = "0.3.30"
+tokio-util = { version = "0.7.10", features = ["io"] }
+dialoguer = { version = "0.11.0", features = ["completion"] }
+console = "0.15.8"
+indicatif = "0.17.8"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "fmt"] }
+itertools = "0.12.1"
+tracing-appender = "0.2.3"
+tracing-chrome = "0.7.2"
+textwrap = { version = "0.16.1", features = ["hyphenation"] }
+hyphenation = "0.8.4"
+mime_guess = "2.0.4"
 
+[dev-dependencies]
+tracing-test = "0.2.4"

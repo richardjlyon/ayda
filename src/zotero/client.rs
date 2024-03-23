@@ -1,8 +1,12 @@
-use std::fs;
+//! A client for the Zotero API (v3)
+//!
+//! see: [Zotero Web API v3](https://www.zotero.org/support/dev/web_api/v3/start).
+//!
+//! The client is a simple wrapper around the reqwest client, with a few convenience methods for
+//! making requests to the Zotero API.
 
 use reqwest::header::HeaderMap;
 use serde::de::DeserializeOwned;
-use serde_json::Value;
 
 use crate::zotero::error::ZoteroError;
 
@@ -27,38 +31,33 @@ impl ZoteroClient {
         }
     }
 
-    pub async fn get<T: DeserializeOwned>(&self, endpoint: &str) -> Result<T, ZoteroError> {
+    pub async fn get(
+        &self,
+        endpoint: &str,
+        params: Option<Vec<(&str, &str)>>,
+    ) -> Result<reqwest::Response, reqwest::Error> {
         let url = format!("{}/{}", self.base_url, endpoint);
-        let response = self.client.get(&url).send().await?;
+        let params = params.unwrap_or_default();
+        self.client.get(&url).query(&params).send().await
+    }
 
-        // TODO insert error handling here
+    /// Get an endpoint and deserialize
+    pub async fn get_deserialized<T: DeserializeOwned>(
+        &self,
+        endpoint: &str,
+        params: Option<Vec<(&str, &str)>>,
+    ) -> Result<T, ZoteroError> {
+        let url = format!("{}/{}", self.base_url, endpoint);
+        let params = params.unwrap_or_default(); // eta-reduction
+        let response = self
+            .client
+            .get(&url)
+            .query(&params)
+            .send()
+            .await?
+            .error_for_status()?;
         let data = response.json::<T>().await?;
 
         Ok::<T, ZoteroError>(data)
-    }
-
-    // Utility function to get the ras data for deserialisation modelling
-    pub async fn get_raw(&self, endpoint: &str) -> Result<String, ZoteroError> {
-        let url = format!("{}/{}", self.base_url, endpoint);
-        let response = self.client.get(&url).send().await?;
-
-        let data = response.text().await?;
-        let json: Value = serde_json::from_str(&data).unwrap();
-        let pretty_json = serde_json::to_string_pretty(&json).unwrap();
-        fs::write("collections.json", &pretty_json).expect("Unable to write file");
-        println!("DEBUG json: {}", pretty_json);
-
-        Ok(pretty_json)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn new_client_has_correct_base_url() {
-        let c = ZoteroClient::new("key", "user");
-        assert_eq!(c.base_url, "https://api.zotero.org/users/user");
     }
 }

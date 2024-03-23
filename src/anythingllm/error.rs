@@ -1,23 +1,38 @@
-//! Custom error types for the AnythingLLM library.
+//! Custom error types for the `anythingllm` library
 
 #[derive(thiserror::Error, Debug)]
 pub enum LLMError {
-    #[error("Authentication failed: {0}")]
-    AuthFail(String),
+    #[error("Authentication error")]
+    AuthError,
+    #[error("Request error: {0}")]
+    ReqwestError(#[from] reqwest::Error),
+    #[error("Bad request: {0}")]
+    BadRequest(String),
     #[error("Service error: {0}")]
     ServiceError(String),
-    #[error("Document exists: {0}")]
-    DocumentNotFoundError(String),
-    #[error("Document not found: {0}")]
-    DocumentExistsError(String),
-    #[error("Couldn't add document: {0}")]
-    DocumentAddError(String),
-    #[error("No Workspace with id {0}")]
-    WorkspaceIdError(u8),
-}
+    #[error("Workspace '{0}' not found")]
+    WorkspaceIdError(String),
+    #[error("Multiple workspaces with name {0} found")]
+    MultipleWorkspacesError(String),
 
-impl From<reqwest::Error> for LLMError {
-    fn from(err: reqwest::Error) -> LLMError {
-        LLMError::ServiceError(err.to_string())
-    }
+    #[error("Document exists: {0}")]
+    DocumentExistsError(String),
+    #[error("Document not found on filesystem")]
+    FileSystemError(#[from] std::io::Error),
+    #[error("Document not found in workspace: {0}")]
+    DocumentNotFoundWorkspaceError(String),
+    #[error("Failed to load PDF")]
+    PDFLoadError(#[from] lopdf::Error),
+    #[error("Multipart form encoding error: {0}")]
+    MultipartFormError(String),
+    #[error("File too large")]
+    FileTooLarge,
+
+    #[error("Custom error: {0}")]
+    CustomError(String),
+    #[error("Unhandled error: {0}")]
+    UnhandledError(String),
+
+    #[error("Cancelled")]
+    Cancelled,
 }

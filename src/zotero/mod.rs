@@ -1,4 +1,7 @@
-pub mod api;
+//! Zotero client library.
+//!
+
 pub mod client;
+pub mod collection;
 pub(crate) mod error;
-pub mod models;
+pub mod item;
