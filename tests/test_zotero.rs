@@ -75,7 +75,33 @@ mod tests {
         let items: Vec<Item> = fixture.client.get_items().collect().await;
         assert!(items.len() > 0);
 
-        dbg!(items.len());
+        dbg!(&items[0]);
+    }
+
+    // getting the parent of an item with a parent should return the parent item
+
+    #[tokio::test]
+    #[ignore] // This operates on a live Zotero library
+    async fn test_get_item_parent_some() {
+        let fixture = ZoteroFixture::new().await;
+        let berger_key = "DVUR4DH8";
+        let attachment_item = fixture.client.get_items_item_key(berger_key).await.unwrap();
+        let parent_item = fixture.client.get_item_parent(&attachment_item).await.unwrap();
+
+        assert_eq!(parent_item.unwrap().key, "NKXWCXKP".to_string());
+    }
+
+    // getting the parent of an item without a parent should return None
+
+    #[tokio::test]
+    #[ignore] // This operates on a live Zotero library
+    async fn test_get_item_parent_none() {
+        let fixture = ZoteroFixture::new().await;
+        let item_key = "NKXWCXKP"; // has no parent
+        let item = fixture.client.get_items_item_key(item_key).await.unwrap();
+        let parent_item = fixture.client.get_item_parent(&item).await.unwrap();
+
+        assert!(parent_item.is_none());
     }
 
     // Items Batched //////////////////////////////////////////////////////////////////////////////
@@ -99,7 +125,6 @@ mod tests {
         let fixture = ZoteroFixture::new().await;
         let collections = fixture.client.get_collections(None).await.unwrap();
         let collection_key = collections[0].key.clone();
-        dbg!(&collection_key);
 
         // let params = None;
 
@@ -114,6 +139,7 @@ mod tests {
     }
 
     // Item Types /////////////////////////////////////////////////////////////////////////////////
+
     #[tokio::test]
     async fn test_get_item_types() {
         // let client = ZoteroClient::new("key", "user");

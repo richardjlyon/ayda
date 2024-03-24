@@ -48,6 +48,7 @@ impl ZoteroClient {
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<T, ZoteroError> {
         let url = format!("{}/{}", self.base_url, endpoint);
+        dbg!(&url);
         let params = params.unwrap_or_default(); // eta-reduction
         let response = self
             .client

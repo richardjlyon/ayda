@@ -11,12 +11,23 @@ pub struct ItemsResponse {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Item {
     pub key: String,
+    pub version: i64,
+    #[serde(rename = "parentItem")]
+    pub parent_item: Option<String>,
+    #[serde(rename = "itemType")]
+    pub item_type: ItemType,
+    pub title: String,
+    pub creators: Option<Vec<Creator>>,
+    #[serde(rename = "abstractNote")]
+    pub abstract_note: Option<String>,
+    pub tags: Option<Vec<Tag>>,
     pub filename: Option<String>,
-    pub title: Option<String>,
     #[serde(rename = "contentType")]
     pub content_type: Option<String>,
     #[serde(rename = "dateAdded", deserialize_with = "deserialize_utc_date")]
     pub date_added: DateTime<Utc>,
+    #[serde(rename = "dateModified", deserialize_with = "deserialize_utc_date")]
+    pub date_modified: DateTime<Utc>,
 }
 
 impl Item {
@@ -30,6 +41,71 @@ impl Item {
             .filter(|_| self.is_pdf())
             .map(|name| root.join(&self.key).join(name))
     }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+enum ItemType {
+    Artwork,
+    Attachment,
+    AudioRecording,
+    Bill,
+    BlogPost,
+    Book,
+    BookSection,
+    Case,
+    ConferencePaper,
+    Dataset,
+    DictionaryEntry,
+    Document,
+    Email,
+    EncyclopediaArticle,
+    Film,
+    ForumPost,
+    Hearing,
+    InstantMessage,
+    Interview,
+    JournalArticle,
+    Letter,
+    MagazineArticle,
+    Manuscript,
+    Map,
+    NewspaperArticle,
+    Note,
+    Patent,
+    Podcast,
+    Preprint,
+    Presentation,
+    RadioBroadcast,
+    Report,
+    #[serde(rename = "computerProgram")]
+    Software,
+    Standard,
+    Statute,
+    #[serde(rename = "tvBroadcast")]
+    TvBroadcast,
+    Thesis,
+    #[serde(rename = "videoRecording")]
+    VideoRecording,
+    #[serde(rename = "webpage")]
+    WebPage,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Creator {
+    #[serde(rename = "firstName")]
+    pub first_name: String,
+    #[serde(rename = "lastName")]
+    pub last_name: String,
+    #[serde(rename = "creatorType")]
+    pub creator_type: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Tag {
+    pub tag: String,
+    #[serde(rename = "type")]
+    pub tag_type: i16,
 }
 
 fn deserialize_utc_date<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>

@@ -21,6 +21,26 @@ impl ZoteroClient {
         self.get_batched(endpoint)
     }
 
+    /// GET /items/<item_key>
+    pub async fn get_items_item_key(&self, item_key: &str) -> Result<Item, ZoteroError> {
+        let endpoint = format!("items/{}", item_key);
+        let response = self.get(&endpoint, None).await?;
+        let item = response.json::<ItemsResponse>().await?;
+        Ok(item.data)
+    }
+
+    /// Get the parent of an item
+    /// If the item has no parent, return None
+    pub async fn get_item_parent(&self, item: &Item) -> Result<Option<Item>, ZoteroError> {
+        match &item.parent_item {
+            Some(parent_key) => {
+                let parent = self.get_items_item_key(parent_key).await?;
+                Ok(Some(parent))
+            }
+            None => Ok(None),
+        }
+    }
+
     /// Get all items in the library in batches
     fn get_batched(&self, endpoint: String) -> impl futures::stream::Stream<Item = Item> + '_ {
         const MAX_RESULTS: i32 = 2000;
