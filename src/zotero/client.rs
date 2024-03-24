@@ -7,8 +7,11 @@
 
 use reqwest::header::HeaderMap;
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 
 use crate::zotero::error::ZoteroError;
+
+use super::item::model::ItemUpdateData;
 
 pub struct ZoteroClient {
     pub base_url: String,
@@ -60,5 +63,29 @@ impl ZoteroClient {
         let data = response.json::<T>().await?;
 
         Ok::<T, ZoteroError>(data)
+    }
+
+    /// Patch an endpoint
+    pub async fn patch(
+        &self,
+        endpoint: &str,
+        version: i64,
+        data: &ItemUpdateData,
+    ) -> Result<(), ZoteroError> {
+        let url = format!("{}/{}", self.base_url, endpoint);
+        let json_data = serde_json::to_value(&data).unwrap();
+
+        let result = self
+            .client
+            .patch(&url)
+            .header("If-Unmodified-Since-Version", version)
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .json(&json_data)
+            .send()
+            .await;
+
+        dbg!(result);
+
+        Ok(())
     }
 }

@@ -3,7 +3,7 @@ use futures::StreamExt;
 use crate::zotero::client::ZoteroClient;
 use crate::zotero::collection::model::Collection;
 use crate::zotero::error::ZoteroError;
-use crate::zotero::item::model::{Item, ItemsResponse};
+use crate::zotero::item::model::{Item, ItemUpdateData, ItemsResponse};
 
 impl ZoteroClient {
     /// GET /items
@@ -39,6 +39,22 @@ impl ZoteroClient {
             }
             None => Ok(None),
         }
+    }
+
+    /// Update the parent of an item
+    pub async fn change_parent_item(
+        &self,
+        item: &Item,
+        data: &ItemUpdateData,
+    ) -> Result<(), ZoteroError> {
+        let parent = match self.get_item_parent(item).await? {
+            Some(parent) => parent,
+            None => return Err(ZoteroError::CustomError("Item has no parent".to_string())),
+        };
+        let endpoint = format!("items/{}", parent.key);
+        let _ = self.patch(&endpoint, parent.version, data).await?;
+
+        Ok(())
     }
 
     /// Get all items in the library in batches

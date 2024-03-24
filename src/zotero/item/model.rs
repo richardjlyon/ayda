@@ -8,6 +8,7 @@ pub struct ItemsResponse {
     pub data: Item,
 }
 
+/// An item in the Zotero library
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Item {
     pub key: String,
@@ -43,6 +44,7 @@ impl Item {
     }
 }
 
+/// The type of the item
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 enum ItemType {
@@ -91,6 +93,7 @@ enum ItemType {
     WebPage,
 }
 
+/// A creator of the item
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Creator {
     #[serde(rename = "firstName")]
@@ -101,11 +104,23 @@ pub struct Creator {
     pub creator_type: String,
 }
 
+/// A tag of the item
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tag {
     pub tag: String,
     #[serde(rename = "type")]
     pub tag_type: i16,
+}
+
+/// A struct to represent information to update an item with
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ItemUpdateData {
+    #[serde(rename = "abstractNote", skip_serializing_if = "Option::is_none")]
+    pub abstract_note: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<Tag>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
 }
 
 fn deserialize_utc_date<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>

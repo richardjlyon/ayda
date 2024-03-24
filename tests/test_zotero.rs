@@ -2,7 +2,9 @@ mod common;
 
 mod tests {
     use ayda::zotero::client::ZoteroClient;
-    use ayda::zotero::item::model::Item;
+    use ayda::zotero::item::model::{Item, ItemUpdateData, Tag};
+    use color_eyre::owo_colors::AnsiColors::Default;
+    use std::default::Default as stdDefault;
 
     use crate::common::ZoteroFixture;
 
@@ -81,14 +83,20 @@ mod tests {
     // getting the parent of an item with a parent should return the parent item
 
     #[tokio::test]
-    #[ignore] // This operates on a live Zotero library
+    // #[ignore] // This operates on a live Zotero library
     async fn test_get_item_parent_some() {
         let fixture = ZoteroFixture::new().await;
         let berger_key = "DVUR4DH8";
         let attachment_item = fixture.client.get_items_item_key(berger_key).await.unwrap();
-        let parent_item = fixture.client.get_item_parent(&attachment_item).await.unwrap();
+        let parent_item = fixture
+            .client
+            .get_item_parent(&attachment_item)
+            .await
+            .unwrap();
 
-        assert_eq!(parent_item.unwrap().key, "NKXWCXKP".to_string());
+        assert_eq!(parent_item.clone().unwrap().key, "NKXWCXKP".to_string());
+
+        dbg!(&parent_item);
     }
 
     // getting the parent of an item without a parent should return None
@@ -104,6 +112,27 @@ mod tests {
         assert!(parent_item.is_none());
     }
 
+    // changing the parent of an item should update the parent item
+
+    #[tokio::test]
+    // #[ignore] // This operates on a live Zotero library
+    async fn test_change_parent_item() {
+        use serde_json::json;
+
+        let fixture = ZoteroFixture::new().await;
+        let item_key = "DVUR4DH8";
+        let item = fixture.client.get_items_item_key(&item_key).await.unwrap();
+
+        let data = ItemUpdateData {
+            abstract_note: Some("TEST DELETE ME".to_string()),
+            ..stdDefault::default()
+        };
+
+        let result = fixture.client.change_parent_item(&item, &data).await;
+
+        assert!(result.is_ok());
+    }
+
     // Items Batched //////////////////////////////////////////////////////////////////////////////
 
     #[tokio::test]
@@ -113,7 +142,6 @@ mod tests {
         let fixture = ZoteroFixture::new().await;
         let items_stream = fixture.client.get_items();
         let data: Vec<_> = items_stream.collect().await;
-        // println!("Fetched {} items", data.len());
 
         assert!(data.len() > 0);
     }
