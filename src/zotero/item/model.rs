@@ -108,8 +108,8 @@ pub struct Creator {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Tag {
     pub tag: String,
-    #[serde(rename = "type")]
-    pub tag_type: i16,
+    // #[serde(rename = "type")]
+    // pub tag_type: Option<i16>,
 }
 
 /// A struct to represent information to update an item with
@@ -121,6 +121,8 @@ pub struct ItemUpdateData {
     pub tags: Option<Vec<Tag>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub creators: Option<Vec<Creator>>,
 }
 
 fn deserialize_utc_date<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>

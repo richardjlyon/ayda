@@ -80,6 +80,25 @@ mod tests {
         dbg!(&items[0]);
     }
 
+    // getting the items from a collection should return those items
+
+    #[tokio::test]
+    async fn test_get_items_collection_key() {
+        use futures::StreamExt;
+        let fixture = ZoteroFixture::new().await;
+        let collections = fixture.client.get_collections(None).await.unwrap();
+        let collection_key = collections[0].key.clone();
+        let items: Vec<Item> = fixture
+            .client
+            .get_collections_collection_key_items_batched(collection_key)
+            .collect()
+            .await;
+
+        assert!(items.len() > 0);
+
+        dbg!(&items[0]);
+    }
+
     // getting the parent of an item with a parent should return the parent item
 
     #[tokio::test]
@@ -120,11 +139,11 @@ mod tests {
         use serde_json::json;
 
         let fixture = ZoteroFixture::new().await;
-        let item_key = "DVUR4DH8";
+        let item_key = "DVUR4DH8"; // Berger attachment
         let item = fixture.client.get_items_item_key(&item_key).await.unwrap();
 
         let data = ItemUpdateData {
-            abstract_note: Some("TEST DELETE ME".to_string()),
+            abstract_note: Some("TEST DELETE ME PLEEEEEASE".to_string()),
             ..stdDefault::default()
         };
 
@@ -154,14 +173,11 @@ mod tests {
         let collections = fixture.client.get_collections(None).await.unwrap();
         let collection_key = collections[0].key.clone();
 
-        // let params = None;
-
         let items_stream = fixture
             .client
             .get_collections_collection_key_items_batched(collection_key);
 
         let data: Vec<_> = items_stream.collect().await;
-        println!("Fetched {} items", data.len());
 
         assert!(data.len() > 0);
     }

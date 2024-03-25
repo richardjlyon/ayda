@@ -3,7 +3,6 @@ use crate::zotero::client::ZoteroClient;
 use crate::Config;
 
 pub mod admin;
-pub mod document;
 pub mod workspace;
 pub mod zotero;
 

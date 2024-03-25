@@ -48,6 +48,14 @@ To change mode, type `/chat`.
 
 To exit, type `/exit`.
 
+## zotero
+
+`> zotero enhance <WORKSPACE_NAME>`
+
+Enhance abstracts and keywords for all items in workspace `<WORKSPACE_NAME>`. This uses the Large Language Model to generate abstracts and keywords for each item.
+
+**Note: This command modfies the metadata of the items in your Zotero collection and cannot be undone. Use with caution.**
+
 ## config
 
 `> config`

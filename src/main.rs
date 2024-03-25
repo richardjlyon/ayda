@@ -12,8 +12,8 @@ use tokio::select;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
-use ayda::app::{commands::admin, commands::workspace, Commands::*};
-use ayda::app::{Cli, SourceType};
+use ayda::app::{commands::admin, commands::workspace, commands::zotero, Commands::*};
+use ayda::app::{Cli, SourceType, ZoteroCmd};
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -101,6 +101,16 @@ async fn command(config_path: PathBuf, cli: Cli) -> eyre::Result<()> {
         Query { workspace_name } => workspace::chat(workspace_name, ChatMode::Query)
             .await
             .wrap_err("unable to query workspace"),
+
+        Zotero {
+            command: ZoteroCmd::ListCollections,
+        } => zotero::list_collections().await.wrap_err("unable to list Zotero collections"),
+
+        Zotero {
+            command: ZoteroCmd::Enhance { collection_name },
+        } => zotero::enhance_collection(collection_name)
+            .await
+            .wrap_err("unable to enhance collection"),
 
         Config {} => admin::configure(&config_path)
             .wrap_err("unable to configure application"),

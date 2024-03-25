@@ -4,9 +4,9 @@ use crate::app;
 use crate::app::commands;
 use crate::zotero::collection::model::Collection;
 
-/// List all Zotero collections
+/// List all Zotero collections.
 ///
-pub async fn list() -> eyre::Result<()> {
+pub async fn list_collections() -> eyre::Result<()> {
     let client = commands::zotero_client();
     let collections = client.get_collections(None).await?;
     let column_titles = vec!["COLLECTION NAME"];
@@ -16,6 +16,7 @@ pub async fn list() -> eyre::Result<()> {
     Ok(())
 }
 
+// Extract data, sort alphabetically, convert to lowercase, and return as a Vec<Vec<String>>.
 fn data_from_collections(collections: Vec<Collection>) -> Vec<Vec<String>> {
     let data: Vec<Vec<String>> = collections
         .iter()

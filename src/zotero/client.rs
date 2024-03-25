@@ -7,12 +7,13 @@
 
 use reqwest::header::HeaderMap;
 use serde::de::DeserializeOwned;
-use serde_json::Value;
 
 use crate::zotero::error::ZoteroError;
 
 use super::item::model::ItemUpdateData;
 
+/// A client for the Zotero API
+#[derive(Debug)]
 pub struct ZoteroClient {
     pub base_url: String,
     pub client: reqwest::Client,
@@ -51,7 +52,6 @@ impl ZoteroClient {
         params: Option<Vec<(&str, &str)>>,
     ) -> Result<T, ZoteroError> {
         let url = format!("{}/{}", self.base_url, endpoint);
-        dbg!(&url);
         let params = params.unwrap_or_default(); // eta-reduction
         let response = self
             .client
@@ -83,8 +83,6 @@ impl ZoteroClient {
             .json(&json_data)
             .send()
             .await;
-
-        dbg!(result);
 
         Ok(())
     }

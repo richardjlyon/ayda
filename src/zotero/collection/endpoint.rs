@@ -12,6 +12,7 @@ impl ZoteroClient {
         let response = self
             .get_deserialized::<Vec<CollectionsResponse>>("collections", params)
             .await?;
+
         let collections: Vec<Collection> = response.iter().map(|c| c.data.clone()).collect();
 
         Ok(collections)

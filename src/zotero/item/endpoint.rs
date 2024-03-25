@@ -5,6 +5,8 @@ use crate::zotero::collection::model::Collection;
 use crate::zotero::error::ZoteroError;
 use crate::zotero::item::model::{Item, ItemUpdateData, ItemsResponse};
 
+use tracing::info;
+
 impl ZoteroClient {
     /// GET /items
     pub fn get_items(&self) -> impl futures::stream::Stream<Item = Item> + '_ {
@@ -12,12 +14,13 @@ impl ZoteroClient {
     }
 
     /// GET /collections/<collection_key>/items
+    ///
+    /// Get the items in a collection
     pub fn get_collections_collection_key_items_batched(
         &self,
         collection_key: String,
     ) -> impl futures::stream::Stream<Item = Item> + '_ {
         let endpoint = format!("collections/{}/items", collection_key);
-
         self.get_batched(endpoint)
     }
 
@@ -68,9 +71,18 @@ impl ZoteroClient {
             ZoteroClient::process_batch(endpoint, x * CHUNK_SIZE, CHUNK_SIZE, self)
         }))
         .buffer_unordered(chunks as usize)
-        .filter_map(|f| async { f.ok() })
+        .map(|f| {
+            if let Err(e) = &f {
+                panic!("{}", e);
+            }
+            f.ok()
+        })
+        .flat_map(futures::stream::iter)
         .flat_map(futures::stream::iter)
     }
+
+    // Ok(s) -> S<Ok[1], Ok[2]>
+    // Err(e) -> S<Err[e]>
 
     /// Return a matching collection if collection_name corresponds to exactly one workspace
     /// NOTE: Case insensitive so 'COVID' matches 'covid'
@@ -98,6 +110,7 @@ impl ZoteroClient {
         }
     }
 
+    #[tracing::instrument]
     async fn process_batch(
         endpoint: String,
         offset: i32,

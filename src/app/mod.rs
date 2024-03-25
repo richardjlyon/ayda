@@ -57,8 +57,26 @@ pub enum Commands {
         workspace_name: String,
     },
 
+    /// Manage Zotero collections
+    Zotero {
+        #[clap(subcommand)]
+        command: ZoteroCmd,
+    },
+
     /// Configure the application
     Config {},
+}
+
+#[derive(Subcommand)]
+pub enum ZoteroCmd {
+    /// List all Zotero collections
+    ListCollections,
+
+    /// Enhance a collection
+    Enhance {
+        /// The name of the collection to enhance
+        collection_name: String,
+    },
 }
 
 #[derive(Clone, Debug, ValueEnum)]

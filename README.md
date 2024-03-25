@@ -45,3 +45,8 @@ axial tilt.
 ## Documentation
 
 For documentation on how to use the `ayda` command line application, see the [documentation](https://richardjlyon.github.io/ayda/).
+
+## Update log
+
+1.0 - Initial release
+1.1 - Added support for modifying Zotero abstracts and keywords
