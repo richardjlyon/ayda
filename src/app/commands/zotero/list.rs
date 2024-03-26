@@ -2,7 +2,7 @@ use itertools::Itertools;
 
 use crate::app;
 use crate::app::commands;
-use crate::zotero::collection::model::Collection;
+use crate::zotero::collection::models::Collection;
 
 /// List all Zotero collections.
 ///

@@ -1,5 +1,5 @@
 use crate::zotero::client::ZoteroClient;
-use crate::zotero::collection::model::{Collection, CollectionsResponse};
+use crate::zotero::collection::models::{Collection, CollectionsResponse};
 use crate::zotero::error::ZoteroError;
 
 impl ZoteroClient {

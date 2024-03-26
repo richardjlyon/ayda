@@ -1,9 +1,9 @@
 use futures::StreamExt;
 
 use crate::zotero::client::ZoteroClient;
-use crate::zotero::collection::model::Collection;
+use crate::zotero::collection::models::Collection;
 use crate::zotero::error::ZoteroError;
-use crate::zotero::item::model::{Item, ItemUpdateData, ItemsResponse};
+use crate::zotero::item::models::{Item, ItemUpdateData, ItemsResponse};
 
 impl ZoteroClient {
     /// GET /items

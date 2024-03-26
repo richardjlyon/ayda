@@ -22,9 +22,9 @@ Delete all workspaces and embedded documents.
 
 ## import
 
-`> import --source zotero|folder|item <SOURCE_IDENTIFIER>`
+`> import --source zotero|folder|item <SOURCE_NAME>`
 
-Import data from Zotero, folder or item to workspace with name `<SOURCE>-<WORKSPACE_NAME>`.
+Import data from Zotero, folder or item to workspace with name `<SOURCE>-<SOURCE_NAME>`.
 
 e.g. `ayda import --source-type folder /Users/richardlyon/InterestingDocs`
 

@@ -10,7 +10,7 @@ use color_eyre::owo_colors::OwoColorize;
 use eyre::Context;
 use tokio::select;
 use tracing::Level;
-use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 use ayda::app::{commands::admin, commands::workspace, commands::zotero, Commands::*};
 use ayda::app::{Cli, SourceType, ZoteroCmd};
@@ -21,6 +21,7 @@ async fn main() -> eyre::Result<()> {
 
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::ERROR)
+        // .with_env_filter(EnvFilter::new("app::commands::zotero::enhance=error"))
         .with_writer(non_blocking_stdio)
         .compact()
         .finish();
@@ -80,9 +81,9 @@ async fn command(config_path: PathBuf, cli: Cli) -> eyre::Result<()> {
         }
 
         Import {
-            source_type,
+            source,
             source_name,
-        } => match source_type {
+        } => match source {
             SourceType::Zotero {} => workspace::import_zotero(source_name)
                 .await
                 .wrap_err("unable to import zotero collection"),

@@ -10,7 +10,7 @@ use serde::de::DeserializeOwned;
 
 use crate::zotero::error::ZoteroError;
 
-use super::item::model::ItemUpdateData;
+use super::item::models::ItemUpdateData;
 
 /// A client for the Zotero API
 #[derive(Debug)]

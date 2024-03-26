@@ -1,13 +1,20 @@
 use crate::anythingllm::workspace::models::Workspace;
 use crate::anythingllm::{ChatMode, Document};
 use crate::app::commands;
-use crate::app::commands::workspace::import::UpdateParameter;
-use crate::zotero::item::model::{Item, ItemUpdateData, Tag};
+use crate::app::commands::workspace::import::{
+    file_paths, get_collection, get_pdfs_from_collection, UpdateParameter,
+};
+use crate::zotero::item::models::{Item, ItemUpdateData, Tag};
 use crate::Config;
+use colored::Colorize;
 use dialoguer::Confirm;
-use futures::StreamExt;
+use futures::{stream, StreamExt};
+use indicatif::{ProgressBar, ProgressStyle};
+use std::io::Write;
 use std::path::PathBuf;
-use tracing::instrument;
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tracing::{event, info, instrument, span, Instrument, Level};
 use uuid::Uuid;
 
 /// Enhance a collection of PDFs.
@@ -22,8 +29,6 @@ use uuid::Uuid;
 ///
 #[instrument]
 pub async fn enhance_collection(collection_name: String) -> eyre::Result<()> {
-    // confirm deletion
-
     let confirm = Confirm::new()
         .with_prompt(format!(
             "This will modify Zotero collection '{}' and cannot be undone. Are you sure you wish to proceed?",
@@ -36,57 +41,113 @@ pub async fn enhance_collection(collection_name: String) -> eyre::Result<()> {
         return Ok(());
     }
 
-    // get collection
-
-    let zotero = commands::zotero_client();
-    let collection = zotero.collection_from_name(&collection_name).await;
-    let collection = match collection {
-        Ok(c) => {
-            println!("Collection OK");
-            c
-            // sp.finish_ok("Collection OK".to_string());
-        }
-        Err(_) => {
-            println!("Collection '{}' doesn't exist", collection_name);
-            // sp.finish_error(format!("Collection '{}' doesn't exist", collection_name));
-            return Ok(());
+    let collection = match get_collection(&collection_name).await {
+        Ok(collection) => collection,
+        Err(e) => {
+            return Err(e);
         }
     };
 
-    // get pdfs
+    let pdfs = match get_pdfs_from_collection(&collection).await {
+        Ok(docs) => docs,
+        Err(e) => {
+            return Err(e);
+        }
+    };
 
-    let items: Vec<Item> = zotero
-        .get_collections_collection_key_items_batched(collection.key)
-        .collect()
-        .await;
-
-    let pdfs: Vec<Item> = items.into_iter().filter(|item| item.is_pdf()).collect();
-
-    if !pdfs.is_empty() {
-        // sp.finish_ok(format!("{} PDFS found", pdfs.len()));
-        println!("{} PDFS found", pdfs.len());
-    } else {
-        // sp.finish_error("No PDFS found in collection".to_string());
-        println!("No PDFS found in collection");
-        return Ok(());
-    }
-
-    // process the pdfs
-
-    for pdf in pdfs.iter() {
-        println!("Processing {}", pdf.title);
-        let metadata = get_metadata(pdf.clone()).await?;
-
-        let updated_item = zotero.change_parent_item(pdf, &metadata).await;
-
-        if updated_item.is_ok() {
-            println!("{} updated", pdf.title);
-        } else {
-            println!("{} not updated", pdf.title);
+    match enhance_pdfs(pdfs).await {
+        Ok(_) => (),
+        Err(e) => {
+            return Err(e);
         }
     }
 
     Ok(())
+}
+
+async fn enhance_pdfs(pdfs: Vec<Item>) -> eyre::Result<Vec<String>> {
+    let mut failures = Vec::<Item>::new();
+
+    let doc_count = pdfs.len();
+    let bar = ProgressBar::new(doc_count as u64);
+    let bar_style = ProgressStyle::default_bar()
+        .template("{bar:100.cyan/blue} {pos:>7}/{len:7} {msg} {eta}")
+        .unwrap();
+    bar.set_style(bar_style.progress_chars("##-"));
+
+    // share one copy between multiple readers using reference counting
+    let zotero = Arc::new(commands::zotero_client());
+    let failed_docs = Arc::new(Mutex::new(Vec::<Item>::new()));
+
+    let docs: Vec<_> = stream::iter(pdfs)
+        .map(|pdf| {
+            let span = span!(Level::INFO, "enhance PDF");
+            let zotero = zotero.clone();
+            let failed_docs = failed_docs.clone();
+            let bar = bar.clone();
+
+            async move {
+                event!(Level::INFO, "Getting metadata for {}", pdf.title);
+                let metadata = match get_metadata(pdf.clone()).await {
+                    Ok(m) => {
+                        bar.inc(1);
+                        event!(Level::INFO, "Got metadata: {:?}", m);
+                        m
+                    }
+                    Err(_) => {
+                        bar.inc(1);
+                        let mut failed_docs = failed_docs.lock().await;
+                        failed_docs.push(pdf.clone());
+                        event!(Level::INFO, "metadata failed");
+                        return None;
+                    }
+                };
+
+                event!(Level::INFO, "Updating parent item for  {}", pdf.title);
+                match zotero.change_parent_item(&pdf, &metadata).await {
+                    Ok(_) => Some(pdf.title),
+                    Err(_) => {
+                        let mut failed_docs = failed_docs.lock().await;
+                        failed_docs.push(pdf.clone());
+                        event!(Level::INFO, "upload fail: {}", pdf.title,);
+                        None
+                    }
+                }
+            }
+            .instrument(span)
+        })
+        .buffered(20)
+        .filter_map(|f| async { f })
+        .collect()
+        .await;
+
+    bar.finish();
+
+    let failed_docs_mutex_guard = failed_docs.lock().await;
+    failures.append(&mut failed_docs_mutex_guard.clone());
+
+    if failures.is_empty() {
+        println!("{}", "  All documents enhanced successfully.".green());
+    } else {
+        let dirs = directories_next::ProjectDirs::from("com", "richardlyon", "aza").unwrap();
+        let filename = format!(
+            "log_{}.txt",
+            chrono::Local::now().format("%Y-%m-%d_%H-%M-%S")
+        );
+        let log_path = dirs.config_dir().join(filename);
+        let mut log_file = std::fs::File::create(&log_path).unwrap();
+        for doc in failures.iter() {
+            writeln!(log_file, "{}", doc.title).unwrap();
+        }
+        let message = format!(
+            "  {} document(s) failed to upload. See {} for details.",
+            failures.len(),
+            log_path.display()
+        );
+        println!("{}", message.red());
+    }
+
+    Ok(docs)
 }
 
 /// Enhance a PDF item.
@@ -130,6 +191,11 @@ async fn get_metadata(pdf: Item) -> eyre::Result<ItemUpdateData> {
             return Err(eyre::eyre!("Embedding failed"));
         }
     };
+
+    info!(
+        "Embedded document {} in workspace {}",
+        pdf.title, workspace.slug
+    );
 
     let update_data = interrogate_doc(&workspace, &doc).await;
 

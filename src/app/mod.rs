@@ -39,7 +39,7 @@ pub enum Commands {
     Import {
         /// The type of source to import
         #[clap(value_enum, long)]
-        source_type: SourceType,
+        source: SourceType,
 
         /// The source to import from
         source_name: String,
