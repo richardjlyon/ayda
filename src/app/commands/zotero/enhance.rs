@@ -2,12 +2,12 @@ use crate::anythingllm::workspace::models::Workspace;
 use crate::anythingllm::{ChatMode, Document};
 use crate::app::commands;
 use crate::app::commands::workspace::import::UpdateParameter;
-use crate::zotero::item::model::{Creator, Item, ItemUpdateData, Tag};
+use crate::zotero::item::model::{Item, ItemUpdateData, Tag};
 use crate::Config;
 use dialoguer::Confirm;
 use futures::StreamExt;
 use std::path::PathBuf;
-use tracing::{info, instrument};
+use tracing::instrument;
 use uuid::Uuid;
 
 /// Enhance a collection of PDFs.
@@ -77,7 +77,7 @@ pub async fn enhance_collection(collection_name: String) -> eyre::Result<()> {
         println!("Processing {}", pdf.title);
         let metadata = get_metadata(pdf.clone()).await?;
 
-        let updated_item = zotero.change_parent_item(&pdf, &metadata).await;
+        let updated_item = zotero.change_parent_item(pdf, &metadata).await;
 
         if updated_item.is_ok() {
             println!("{} updated", pdf.title);
@@ -116,7 +116,7 @@ async fn get_metadata(pdf: Item) -> eyre::Result<ItemUpdateData> {
         }
     };
 
-    let _ = match anythingllm
+    match anythingllm
         .update_embeddings(
             &workspace.slug,
             vec![doc.clone().location.unwrap()],
@@ -148,13 +148,13 @@ async fn interrogate_doc(workspace: &Workspace, doc: &Document) -> ItemUpdateDat
     );
     let keywords_query = format!("[INST]This is an academic article[/INST] Generate 3 keywords for {}. Display the result as a comma separated list", &doc_title);
 
-    let mut doc_abstract = anythingllm
+    let doc_abstract = anythingllm
         .post_workspace_slug_chat(&workspace.slug, &abstract_query, &ChatMode::Chat)
         .await
         .unwrap();
 
     // remove \n from abstract
-    let doc_abstract = doc_abstract.text_response.replace("\n", "");
+    let doc_abstract = doc_abstract.text_response.replace('\n', "");
 
     let keywords = anythingllm
         .post_workspace_slug_chat(&workspace.slug, &keywords_query, &ChatMode::Chat)
@@ -163,7 +163,7 @@ async fn interrogate_doc(workspace: &Workspace, doc: &Document) -> ItemUpdateDat
 
     let keywords: Vec<String> = keywords
         .text_response
-        .split(",")
+        .split(',')
         .map(|s| s.trim().to_string())
         .collect();
 

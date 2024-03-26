@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
@@ -47,7 +47,7 @@ impl Item {
 /// The type of the item
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-enum ItemType {
+pub enum ItemType {
     Artwork,
     Attachment,
     AudioRecording,

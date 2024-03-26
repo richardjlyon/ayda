@@ -73,9 +73,9 @@ impl ZoteroClient {
         data: &ItemUpdateData,
     ) -> Result<(), ZoteroError> {
         let url = format!("{}/{}", self.base_url, endpoint);
-        let json_data = serde_json::to_value(&data).unwrap();
+        let json_data = serde_json::to_value(data).unwrap();
 
-        let result = self
+        let _ = self
             .client
             .patch(&url)
             .header("If-Unmodified-Since-Version", version)

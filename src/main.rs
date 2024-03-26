@@ -60,7 +60,7 @@ async fn command(config_path: PathBuf, cli: Cli) -> eyre::Result<()> {
                 Ok(_) => Ok(()),
                 Err(e) => {
                     println!("{}", e.to_string().red());
-                    Err(e.into())
+                    Err(e)
                 }
             }
         }
@@ -74,7 +74,7 @@ async fn command(config_path: PathBuf, cli: Cli) -> eyre::Result<()> {
                 Ok(_) => Ok(()),
                 Err(e) => {
                     println!("{}", e.to_string().red());
-                    Err(e.into())
+                    Err(e)
                 }
             }
         }
@@ -89,7 +89,7 @@ async fn command(config_path: PathBuf, cli: Cli) -> eyre::Result<()> {
             SourceType::Folder {} => workspace::import_folder(PathBuf::from(source_name))
                 .await
                 .wrap_err("unable to import file"),
-            SourceType::Item {} => workspace::import_item(source_name)
+            SourceType::Item {} => workspace::import_item()
                 .await
                 .wrap_err("unable to import item"),
         },

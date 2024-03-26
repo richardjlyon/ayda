@@ -103,8 +103,7 @@ impl AnythingLLMClient {
 
         let docpaths: Vec<String> = documents.iter().map(|d| d.docpath.clone()).collect();
 
-        let _ = self
-            .delete_api_system_remove_documents(docpaths)
+        self.delete_api_system_remove_documents(docpaths)
             .await
             .unwrap();
 

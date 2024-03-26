@@ -5,8 +5,6 @@ use crate::zotero::collection::model::Collection;
 use crate::zotero::error::ZoteroError;
 use crate::zotero::item::model::{Item, ItemUpdateData, ItemsResponse};
 
-use tracing::info;
-
 impl ZoteroClient {
     /// GET /items
     pub fn get_items(&self) -> impl futures::stream::Stream<Item = Item> + '_ {
@@ -55,7 +53,7 @@ impl ZoteroClient {
             None => return Err(ZoteroError::CustomError("Item has no parent".to_string())),
         };
         let endpoint = format!("items/{}", parent.key);
-        let _ = self.patch(&endpoint, parent.version, data).await?;
+        self.patch(&endpoint, parent.version, data).await?;
 
         Ok(())
     }
@@ -73,6 +71,7 @@ impl ZoteroClient {
         .buffer_unordered(chunks as usize)
         .map(|f| {
             if let Err(e) = &f {
+                // FIXME improve the error return type to aid identifying deserialisation error
                 panic!("{}", e);
             }
             f.ok()

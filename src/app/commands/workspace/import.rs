@@ -102,7 +102,7 @@ pub async fn import_folder(folder_path: PathBuf) -> eyre::Result<()> {
 
 /// Import an item.
 
-pub async fn import_item(folder_path: String) -> eyre::Result<()> {
+pub async fn import_item() -> eyre::Result<()> {
     Ok(())
 }
 
@@ -115,9 +115,9 @@ pub async fn import_item(folder_path: String) -> eyre::Result<()> {
 //
 // Upload failures are reported at the end of the process and logged to allow for manual
 // intervention.
-async fn upload_docs(workspace_name: &String, file_paths: Vec<PathBuf>) -> eyre::Result<()> {
+async fn upload_docs(workspace_name: &str, file_paths: Vec<PathBuf>) -> eyre::Result<()> {
     let anythingllm = commands::anythingllm_client();
-    let workspace = anythingllm.get_workspace_by_name(&workspace_name).await;
+    let workspace = anythingllm.get_workspace_by_name(workspace_name).await;
 
     let sp = Spinner::new("[3/6]".to_string(), "Checking workspace...".to_string());
 
@@ -138,7 +138,7 @@ async fn upload_docs(workspace_name: &String, file_paths: Vec<PathBuf>) -> eyre:
             .await;
     };
 
-    let workspace = match anythingllm.create_workspace(&workspace_name).await {
+    let workspace = match anythingllm.create_workspace(workspace_name).await {
         Ok(workspace) => {
             // sp.finish_ok("Workspace OK".to_string());
             workspace
@@ -255,7 +255,7 @@ async fn upload_docs(workspace_name: &String, file_paths: Vec<PathBuf>) -> eyre:
         println!("\nFailed uploads logged to {}", log_path.display());
     }
 
-    return Ok(());
+    Ok(())
 }
 
 // Generate a list of PathBuf to PDFs in a directory
